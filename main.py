@@ -1,6 +1,7 @@
-from cthulhu.game import GameBoard
+from game import GameBoard
+from printer import print_player_hands
 
 if __name__ == '__main__':
     game = GameBoard()
     game.initialize()
-    print(game.old_gods)
+    print(print_player_hands(game))

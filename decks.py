@@ -1,23 +1,29 @@
 from random import shuffle
+from collections import deque
 import inspect
 
+from utils import PandemicObject
 
-class PandemicClass(object):
+
+class PandemicCard(PandemicObject):
     name = ''
     text = ''
     action = None
 
-    def __init__(self, name, text, action=None):
-        self.name = name
+    def __init__(self, name='', text='', action=None):
+        super(PandemicCard, self).__init__(name=name)
         self.text = text
         self.action = action
+
+    def __repr__(self):
+        return '<{}: {}>'.format(self.__class__.__name__, self.name)
 
     def activate(self, board, player):
         if inspect.isfunction(self.action):
             self.action(board, player)
 
 
-class OldGod(PandemicClass):
+class OldGod(PandemicCard):
     revealed = False
     recurring = True
 
@@ -25,28 +31,14 @@ class OldGod(PandemicClass):
         super(OldGod, self).__init__(name, text, action)
         self.recurring = recurring
 
-    def __repr__(self):
-        return '<{}>'.format(self.name)
-
     def activate(self, board, player):
         super(OldGod, self).activate(board, player)
         if self.recurring:
             board.effects.append(self.name)
 
 
-class Relic(object):
-    name = ''
-    text = ''
-    action = None
-
-    def __init__(self, name, text, action):
-        self.name = name
-        self.text = text
-        self.action = action
-
-    def activate(self, board, player):
-        if inspect.isfunction(self.action):
-            self.action(board, player)
+class Relic(PandemicCard):
+    """ relic """
 
 
 def azathoth_action(board, player):
@@ -139,22 +131,29 @@ def get_relics():
 town_deck = ['Kingsport', 'Innsmouth', 'Dunwich', 'Arkham'] * 11
 
 
-def get_town_deck():
-    shuffle(town_deck)
-    return town_deck
+def get_player_relic_decks(num_players=2):
+    relics = get_relics()
+    player_deck = town_deck + relics[:2+num_players]
+    shuffle(player_deck)
+    relics = relics[2+num_players]
+    return player_deck, relics
 
 
-class SummonCard(object):
+class SummonCard(PandemicObject):
     name = ''
-    shiggoths = False
+    shoggoths = False
 
-    def __init__(self, name, shiggoths=False):
-        self.name = name
-        self.shiggoths = shiggoths
+    def __init__(self, name, shoggoths=False):
+        super(SummonCard, self).__init__(name=name)
+        self.shoggoths = shoggoths
+
+    def __repr__(self):
+        shog = self.shoggoths and '(*)' or ''
+        return '<{}: {}{}>'.format(self.__class__.__name__, self.name, shog)
 
 
-def get_summon_cards():
-    cards = [
+def get_summon_deck():
+    cards = deque([
         SummonCard('Wharf'),
         SummonCard('University', True),
         SummonCard('Old Mill'),
@@ -179,6 +178,10 @@ def get_summon_cards():
         SummonCard('Junkyard'),
         SummonCard('Pawn Shop', True),
         SummonCard('Farm Stead'),
-    ]
+    ])
     shuffle(cards)
     return cards
+
+
+class EvilStirs(PandemicCard):
+    name = 'Evil Stirs'
