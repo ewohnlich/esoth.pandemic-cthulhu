@@ -1,7 +1,7 @@
 from decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs
 from utils import PandemicObject
 from collections import deque
-from random import shuffle
+from random import shuffle, choice
 
 
 class GameBoard(object):
@@ -17,6 +17,7 @@ class GameBoard(object):
     effects = []
     players = []
     locations = {}
+    current_player = None
 
     def turn(self):
         pass
@@ -81,6 +82,39 @@ class GameBoard(object):
             shuffle(deck)
             self.player_deck += deck
 
+    def add_cultist(self, location):
+        raise NotImplementedError
+
+    def add_shoggoth(self, location):
+        raise NotImplementedError
+
+    def sanity_roll(self, player=None):
+        if not player:
+            player = self.current_player
+        choices = [(0,0),  # sanity, cultists
+                   (0,0),
+                   (1,0),
+                   (1,0),
+                   (2,0),
+                   (0,2),]
+        sanity, cultists = choice(choices)
+        if sanity:
+            print('** {} loses {} sanity **'.format(player.name, sanity))
+            player.sanity = max(0, player.sanity-sanity)
+        elif cultists:
+            if self.locations[player.location].cultists >= 2:
+                print('** Awakens **')
+                raise NotImplementedError  # awaken
+            else:
+                print('** {} cultists appear at **'.format(cultists, player.location))
+                self.locations[player.location].cultists += cultists
+        else:
+            print('** {} maintains a grip on reality. No effect. **'.format(player.role))
+
+
+    def play(self):
+        raise NotImplementedError
+
     def check_end(self):
         if self.cultist_reserve <= 0:
             return True
@@ -95,11 +129,13 @@ class Player(PandemicObject):
     effects = None
     sanity = 4
     role = None
+    location = 'Train Station'
 
     def __init__(self, name=''):
         super(Player, self).__init__(name=name)
         self.hand = []
         self.effects = []
+
 
 
 # Town

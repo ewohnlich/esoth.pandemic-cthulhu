@@ -35,6 +35,7 @@ class OldGod(PandemicCard):
         super(OldGod, self).activate(board, player)
         if self.recurring:
             board.effects.append(self.name)
+        print('** {} has been revealed! {} **'.format(self.name, self.text))
 
 
 class Relic(PandemicCard):
@@ -185,3 +186,10 @@ def get_summon_deck():
 
 class EvilStirs(PandemicCard):
     name = 'Evil Stirs'
+
+    def activate(self, board, player):
+        for god in board.old_gods:
+            if not god.revealed:
+                god.revealed = True
+                god.activate(board, player)
+                break
