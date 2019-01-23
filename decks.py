@@ -42,28 +42,33 @@ class Relic(PandemicCard):
     """ relic """
 
 
-def azathoth_action(board, player):
+def azathoth_action(board):
     board.cultist_reserve -= 3
 
 
-def hastor_action(board, player):
+def hastor_action(board):
+    board.awakening_ritual()
+    board.move_shoggoths()
+
+
+def dagon_action(board):
+    for location in board.locations:
+        if location.gate:
+            board.add_cultist(location.name)
+
+
+def tsathaggua_action(board):
     raise NotImplementedError
 
 
-def dagon_action(board, player):
-    raise NotImplementedError
-
-
-def tsathaggua_action(board, player):
-    raise NotImplementedError
-
-
-def shubniggurath_action(board, player):
-    raise NotImplementedError
+def shubniggurath_action(board):
+    for i in range(4):
+        board.draw_summon()
 
 
 def alien_carving(board, player):
-    raise NotImplementedError
+    board.sanity_roll(player)
+    player.effects.append('Alien Carving')
 
 
 def relic_action(board, player):
@@ -79,7 +84,7 @@ def get_old_gods():
                                 'sanity. An investigator may not lose their last sanity token to prevent this cultist '
                                 'placement.'),
         OldGod('Shud\'Mell', 'All players collectively lose 3/4/5 sanity tokens [with 2/3/4 players].'),
-        OldGod('Yog-Sothoth', 'Playing Relic cards can only be done by the, active player.', recurring=True),
+        OldGod('Yog-Sothoth', 'Playing Relic cards can only be done by the active player.', recurring=True),
         OldGod('Hastor', 'Draw the bottom card from the Summoning deck. Place 1 Shoggoth on that location.'
                          'Discard that card to the Summoning discard pile. Then move each Shoggoth 1 location closer '
                          'to the nearest open gate.', action=hastor_action),
@@ -134,9 +139,9 @@ town_deck = ['Kingsport', 'Innsmouth', 'Dunwich', 'Arkham'] * 11
 
 def get_player_relic_decks(num_players=2):
     relics = get_relics()
-    player_deck = town_deck + relics[:2+num_players]
+    player_deck = town_deck + relics[:2 + num_players]
     shuffle(player_deck)
-    relics = relics[2+num_players]
+    relics = relics[2 + num_players]
     return player_deck, relics
 
 
@@ -187,9 +192,18 @@ def get_summon_deck():
 class EvilStirs(PandemicCard):
     name = 'Evil Stirs'
 
+    def __init__(self):
+        return
+
     def activate(self, board, player):
-        for god in board.old_gods:
-            if not god.revealed:
-                god.revealed = True
-                god.activate(board, player)
-                break
+        # 1. Fight the madness
+        board.sanity_roll(player)
+
+        # 2. Awakening
+        board.awakening_ritual()
+
+        # 3. A Shoggoth appears
+        board.summon_shoggoth()
+
+        # 4. Cultists regroup
+        board.regroup_cultists()
