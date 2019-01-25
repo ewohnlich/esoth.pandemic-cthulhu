@@ -1,11 +1,45 @@
 def print_player_hands(game):
     for player in game.players:
-        print('{}: {}'.format(player.name, sorted(player.hand)))
+        print('Hand for {} at {} : {}'.format(player.role.name, player.location,
+                                              ', '.join(sorted(map(str, player.hand), ))))
 
 
-def print_old_gods(game):
-    for god in game.old_gods:
-        if god.revealed:
-            print(god.name)
-        else:
-            print('***')
+def print_shoggoth_locations(game):
+    locs = []
+    for loc in game.locations:
+        if game.locations[loc].shoggoth:
+            locs.append(loc)
+    print('Shoggoths located at: {}'.format(', '.join(locs)))
+
+
+ELDER_MAP = """
+Old Gods: {}
+                      ARKHAM                                                       INNSMOUTH
+Train Station<b> - University ----- Police Station    Diner<b> ------- Junkyard     Hospital(G)  Boardwalk
+| s[ ]c[ ]       | s[ ]c[ ]      / | s[ ]c[ ]       _/ s[ ]c[ ]        | s[ ]c[ ]  / s[ ]c[ ]   /| s[ ]c[ ]
+|                |        ______/  |             __/                   |          /            / |
+|                Park(G) /-------- Secret Lodge /                      Pawn Shop / Factory<b> /  Docks
+|                  s[ ]c[ ]         s[ ]c[ ]                            s[ ]c[ ]     s[ ]c[ ]   / s[ ]c[ ]
+|                 DUNWICH                                      ________________________________/
+Cafe ----------- Church ------- Historic Inn<b>         Woods /------ Market<b> ---- Wharf
+  s[ ]c[ ]     /| s[ ]c[ ]    /  s[ ]c[ ]              | s[ ]c[ ]   / | s[ ]c[ ]    | s[ ]c[ ]
+              / |           _/                         |           /  |             |
+ Old Mill(G) /   Farmstead /---- Swamp --------------- Great Hall /   Theater       Graveyard(G)
+   s[ ]c[ ]      s[ ]c[ ]        s[ ]c[ ]               s[ ]c[ ]       s[ ]c[ ]      s[ ]c[ ]
+ $=shoggoth *=cultist                                            KINGSPORT
+"""
+
+
+def print_elder_map(game):
+    elder_map = ELDER_MAP.replace('s[ ]c[ ]', '{}')
+    gods = ' '.join([god.revealed and god.name or '*' for god in game.old_gods])
+    order = ['Train Station', 'University', 'Police Station', 'Diner', 'Junkyard', 'Hospital', 'Boardwalk',
+             'Park', 'Secret Lodge', 'Pawn Shop', 'Factory', 'Docks', 'Cafe', 'Church', 'Historic Inn', 'Woods',
+             'Market', 'Wharf', 'Old Mill', 'Farmstead', 'Swamp', 'Great Hall', 'Theater', 'Graveyard']
+    details = []
+    for loc in order:
+        details.append('{: <8}'.format('$' * game.locations[loc].shoggoth + '*' * game.locations[loc].cultists))
+    elder_map = elder_map.format(gods, *details)
+    elder_map = elder_map.replace('(G)', '({})')
+    elder_map = elder_map.format(*[town.elder_sign and 'E' or town.sealed and 'X' or ' ' for town in game.towns])
+    print(elder_map)

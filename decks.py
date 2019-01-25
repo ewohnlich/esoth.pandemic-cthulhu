@@ -31,39 +31,60 @@ class OldGod(PandemicCard):
         super(OldGod, self).__init__(name, text, action)
         self.recurring = recurring
 
-    def activate(self, board, player):
+    def activate(self, board, player=None):
+        print('** {} has been revealed! {} **'.format(self.name, self.text))
         super(OldGod, self).activate(board, player)
         if self.recurring:
             board.effects.append(self.name)
-        print('** {} has been revealed! {} **'.format(self.name, self.text))
 
 
 class Relic(PandemicCard):
     """ relic """
 
 
-def azathoth_action(board):
+def azathoth_action(board, player=None):
     board.cultist_reserve -= 3
 
 
-def hastor_action(board):
-    board.awakening_ritual()
+def hastor_action(board, player=None):
+    board.summon_shoggoth()
     board.move_shoggoths()
 
 
-def dagon_action(board):
-    for location in board.locations:
+def dagon_action(board, player=None):
+    for location in board.locations.values():
         if location.gate:
             board.add_cultist(location.name)
 
 
-def tsathaggua_action(board):
+def tsathaggua_action(board, player=None):
     raise NotImplementedError
 
 
-def shubniggurath_action(board):
+def shubniggurath_action(board, player=None):
     for i in range(4):
         board.draw_summon()
+
+
+def shudmell_action(board, player=None):
+    pool = len(board.players) + 1
+    sane_players = [player for player in board.players if player.sanity]
+    while sane_players and pool:
+        try:
+            opts = ' '.join(
+                ['({}) {}[{}]'.format(idx + 1, player.name, player.sanity) for idx, player in enumerate(sane_players)])
+            choice = input(
+                'You must collectively lose {} more sanity. Which player should lose the next one? {}: '.format(pool,
+                                                                                                                opts))
+            player = sane_players[int(choice) - 1]
+            player.sanity -= 1
+            pool -= 1
+        except ValueError:
+            print('Not a valid option')
+        except IndexError:
+            print('Not a valid option')
+    if pool and not sane_players:
+        print('No more players can afford to lose a sanity point')
 
 
 def alien_carving(board, player):
@@ -77,13 +98,14 @@ def relic_action(board, player):
 
 def get_old_gods():
     gods = [
-        OldGod('Ithaqua', 'To walk out of a location 2 or more cultists, a player must first defeat a Cultist at '
+        OldGod('Ithaqua', 'To walk out of a location with 2 or more cultists, a player must first defeat a Cultist at '
                           'that location', recurring=True),
         OldGod('Azathoth', 'Remove 3 cultists from the unused supply', action=azathoth_action, recurring=True),
         OldGod('Atlatch-Nacha', 'Each investigator puts 1 cultist on their location unless they choose to lose 1 '
                                 'sanity. An investigator may not lose their last sanity token to prevent this cultist '
                                 'placement.'),
-        OldGod('Shud\'Mell', 'All players collectively lose 3/4/5 sanity tokens [with 2/3/4 players].'),
+        OldGod('Shud\'Mell', 'All players collectively lose 3/4/5 sanity tokens [with 2/3/4 players].',
+               action=shudmell_action),
         OldGod('Yog-Sothoth', 'Playing Relic cards can only be done by the active player.', recurring=True),
         OldGod('Hastor', 'Draw the bottom card from the Summoning deck. Place 1 Shoggoth on that location.'
                          'Discard that card to the Summoning discard pile. Then move each Shoggoth 1 location closer '
@@ -183,7 +205,7 @@ def get_summon_deck():
         SummonCard('Train Station'),
         SummonCard('Junkyard'),
         SummonCard('Pawn Shop', True),
-        SummonCard('Farm Stead'),
+        SummonCard('Farmstead'),
     ])
     shuffle(cards)
     return cards
@@ -207,3 +229,57 @@ class EvilStirs(PandemicCard):
 
         # 4. Cultists regroup
         board.regroup_cultists()
+
+
+class Role(PandemicObject):
+    name = ''
+    action_modifier = 0
+    clear_all_cultists = False
+
+    def __init__(self, name, **kwargs):
+        super(Role, self).__init__(name)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
+class RoleManager(object):
+    roles = []
+    active_role = None
+
+    def __init__(self):
+        self.roles = [
+            Role(name='Detective'),
+            Role(name='Doctor', action_modifier=1),
+            Role(name='Driver'),
+            Role(name='Hunter', clear_all_cultists=True),
+            Role(name='Magician'),
+            Role(name='Occultist'),
+            Role(name='Report'),
+        ]
+        self.shuffle()
+        self.active_role = self.roles.pop()
+
+    def shuffle(self):
+        roles = self.roles
+        shuffle(roles)
+        self.roles = roles
+
+    def assign_role(self, player, auto=False):
+        if auto:
+            self.shuffle()
+            player.role = self.roles.pop()
+            return
+
+        choice = None
+        choices = [self.active_role, self.roles.pop()]
+        while not choice:
+            try:
+                choice = choices[
+                    int(input('Select a role: (1) {} or (2) {}: '.format(*[role.name for role in choices]))) - 1]
+                del choices[choices.index(choice)]
+                self.active_role = choices[0]
+            except IndexError:
+                print('Not a valid option')
+            except ValueError:
+                print('Not a valid option')
+        player.role = choice

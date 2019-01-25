@@ -1,12 +1,19 @@
 from game import GameBoard
-from printer import print_player_hands, print_old_gods
+from decks import *
+
+
+def test_shubmell(game):
+    game.old_gods[0].action = shudmell_action
+    game.awakening_ritual()
+
 
 if __name__ == '__main__':
     game = GameBoard()
-    print_player_hands(game)
-    print_old_gods(game)
-    import code
-    variables = globals().copy()
-    variables.update(locals())
-    shell = code.InteractiveConsole(variables)
-    shell.interact()
+    game.play()
+    # import code
+    # variables = globals().copy()
+    # variables.update(locals())
+    # shell = code.InteractiveConsole(variables)
+    # shell.interact()
+    # game.move_shoggoths()
+    # game.move_shoggoths()
