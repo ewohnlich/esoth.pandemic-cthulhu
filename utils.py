@@ -30,12 +30,18 @@ def get_input(options, attr, prompt):
     while not selection:
         opts = []
         for idx, opt in enumerate(options):
-            element = hasattr(opt, attr) and getattr(opt, attr) or opt[attr]
+            element = opt
+            if attr:
+                if hasattr(opt, attr):
+                    element = getattr(opt, attr)
+                if isinstance(opt, dict):
+                    element = opt[attr]
             opts.append('({}) {}'.format(idx + 1, element))
         opts = ' '.join(opts)
 
+        raw = input('{}: {}: '.format(prompt, opts))
         try:
-            selection = options[int(input('{}: {}: '.format(prompt, opts))) - 1]
+            selection = options[int(raw) - 1]
         except ValueError:
             print('Not a valid option')
         except IndexError:

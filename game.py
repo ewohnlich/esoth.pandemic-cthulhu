@@ -4,8 +4,8 @@ from random import shuffle, choice
 from utils import PandemicObject, get_input
 from decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, PandemicCard, RoleManager
 from printer import print_player_hands, print_elder_map
+from player import Player
 
-PLAYERS = 1
 AUTO_ASSIGNMENT = True  # automatically set roles if true, easier for testing
 
 
@@ -56,6 +56,17 @@ class GameBoard(object):
         self.setup_cultists()
         self.deal_players()
         self.initialize_evil()
+
+    def announce(self, msg):
+        """ The game is only text based now so it just prints to stdout
+
+        :param msg: message to print
+        :return:
+        """
+        print(msg)
+
+    def show_board(self):
+        print_elder_map(self)
 
     def setup_locations(self):
         kingsport = Town('Kingsport')
@@ -125,7 +136,7 @@ class GameBoard(object):
         add_conn('Boardwalk', 'Docks', 'Factory')
         add_conn('Factory', 'Hospital', 'Pawn Shop', 'Boardwalk')
         add_conn('Hospital', 'Factory', 'Pawn Shop')
-        add_conn('Pawn Shop', 'Junkyard')
+        add_conn('Pawn Shop', 'Junkyard', 'Hospital')
         add_conn('Junkyard', 'Diner', 'Pawn Shop')
 
     def setup_cultists(self):
@@ -134,12 +145,13 @@ class GameBoard(object):
             draw = self.summon_deck.pop()
             self.summon_discards.append(draw)
             self.locations[draw.name].cultists += count
-            print('Placed {} cultist(s) at {}'.format(count, draw.name))
+            self.announce('Placed {} cultist(s) at {}'.format(count, draw.name))
             self.cultist_reserve -= count
         shog = self.summon_deck.pop()
         self.summon_discards.append(shog)
-        self.locations[shog.name].shoggoth = True
-        print('Placed a shoggoth at {}'.format(shog.name))
+        self.locations[shog.name].shoggoth = 1
+        self.shoggoth_reserve -= 1
+        self.announce('Placed a shoggoth at {}'.format(shog.name))
         self.shoggoth_reserve -= 1
 
     def deal_players(self):
@@ -174,11 +186,11 @@ class GameBoard(object):
     def add_cultist(self, location):
         if self.locations[location].cultists == 3:
             # awaken ritual
-            print('{} is at cultist capacity - an awakening ritual occurs!'.format(location))
+            self.announce('{} is at cultist capacity - an awakening ritual occurs!'.format(location))
             self.awakening_ritual()
         else:
             self.locations[location].cultists += 1
-            print('{} now has {} cultist(s)'.format(location, self.locations[location].cultists))
+            self.announce('{} now has {} cultist(s)'.format(location, self.locations[location].cultists))
 
     def sanity_roll(self, player=None):
         if not player:
@@ -191,14 +203,14 @@ class GameBoard(object):
                    (0, 2), ]
         sanity, cultists = choice(choices)
         if sanity:
-            print('** {} loses {} sanity **'.format(player.role.name, sanity))
+            self.announce('** {} loses {} sanity **'.format(player.name(), sanity))
             player.sanity = max(0, player.sanity - sanity)
         elif cultists:
-            print('** {} summons 2 cultists to {} **'.format(player.role.name, player.location))
+            self.announce('** {} summons 2 cultists to {} **'.format(player.name(), player.location))
             self.add_cultist(player.location)
             self.add_cultist(player.location)
         else:
-            print('** {} maintains a grip on reality. No effect. **'.format(player.role.name))
+            self.announce('** {} maintains a grip on reality. No effect. **'.format(player.name()))
 
     def awakening_ritual(self):
         for god in self.old_gods:
@@ -213,7 +225,7 @@ class GameBoard(object):
         while not self.have_lost() and not self.have_won():
             self.current_player = self.players[turn % len(self.players)]
             print_player_hands(self)
-            print('It is now {}\'s turn (turn {})'.format(self.current_player.role.name, turn+1))
+            self.announce('It is now {}\'s turn (turn {})'.format(self.current_player.name(), turn+1))
             self.current_player.do_turn(self)
             print_elder_map(self)
             turn += 1
@@ -222,7 +234,7 @@ class GameBoard(object):
             condition = 'You have lost: {}'.format(condition)
         else:
             condition = 'You have won!'
-        print('The game is over. {}'.format(condition))
+        self.announce('The game is over. {}'.format(condition))
 
     def discard(self, card):
         self.player_discards.append(card)
@@ -235,7 +247,7 @@ class GameBoard(object):
             self.summon_deck = deque(discards)
             self.summon_discards = []
         summon = self.summon_deck.pop()
-        print('Summon deck draw: {}'.format(summon.name))
+        self.announce('Summon deck draw: {}'.format(summon.name))
         self.add_cultist(summon.name)
         if summon.shoggoths:
             self.move_shoggoths()
@@ -265,7 +277,7 @@ class GameBoard(object):
             if location.shoggoth:
                 location.shoggoth -= 1
                 if location.gate:
-                    print('The Shoggoth at {} enters the gate, triggering an awakening ritual'.format(location.name))
+                    self.announce('The Shoggoth at {} enters the gate, triggering an awakening ritual'.format(location.name))
                     awaken += 1
                 else:
                     opts = {}
@@ -280,12 +292,12 @@ class GameBoard(object):
                     opts = opts[min(opts.keys())]
                     if len(opts) == 1:
                         opts[0].shoggoth += 1
-                        print('Shoggoth moves from {} to {}'.format(location.name, opts[0].name))
+                        self.announce('Shoggoth moves from {} to {}'.format(location.name, opts[0].name))
                     else:
                         choice = get_input(opts, 'name', 'Shoggoth move options at {} are equidistant. '
                                                          'Current player chooses'.format(location.name))
                         choice.shoggoth += 1
-                        print('Shoggoth moves from {} to {}'.format(location.name, choice.name))
+                        self.announce('Shoggoth moves from {} to {}'.format(location.name, choice.name))
         for i in range(awaken):
             self.awakening_ritual()
 
@@ -298,7 +310,7 @@ class GameBoard(object):
 
     def summon_shoggoth(self):
         summon = self.summon_deck.popleft()
-        print('A Shoggoth has been summoned at {}'.format(summon.name))
+        self.announce('A Shoggoth has been summoned at {}'.format(summon.name))
         self.shoggoth_reserve -= 1
         if self.shoggoth_reserve < 0:
             return  # stop here
@@ -330,99 +342,6 @@ class GameBoard(object):
             return 'All players are insane.'
         if not self.player_deck:
             return 'Player deck has been depleted.'
-
-
-class Player(PandemicObject):
-    hand = None
-    effects = None
-    sanity = 4
-    role = None
-    location = 'Train Station'
-
-    def __init__(self, name=''):
-        super(Player, self).__init__(name=name)
-        if not self.name:
-            global PLAYERS
-            self.name = 'player{}'.format(PLAYERS)
-            PLAYERS += 1
-        self.hand = []
-        self.effects = []
-
-    def deal(self, board):
-        card = board.draw_player_card()
-        print('{} drew a card: {}'.format(self.role.name, hasattr(card, 'name') and card.name or card))
-        if isinstance(card, PandemicCard) and card.name == 'Evil Stirs':
-            card.activate(board, self)
-        else:
-            self.hand.append(card)
-            while len(self.hand) > 7:
-                opts = ['{}. {}'.format(idx + 1, card) for idx, card in enumerate(self.hand)]
-                discard = input('You are over the hand limit. Enter a number to discard. {}'.format(', '.join(opts)))
-                try:
-                    discard_idx = int(discard) - 1
-                    discard = self.hand[discard_idx]
-                    del self.hand[discard_idx]
-                    board.discard(discard)
-                except ValueError:
-                    print('Option must be an integer')
-                except IndexError:
-                    print('Not a valid option')
-            self.hand = sorted(self.hand)
-
-    def do_turn(self, board):
-        actions = 4 + self.role.action_modifier
-        if not self.sanity:
-            actions -= 1
-        while actions:
-            cost = self.do_action(board, actions)
-            actions -= cost
-        print('{} actions over, now drawing cards...\n'.format(self.role.name))
-        self.deal(board)
-        self.deal(board)
-        board.draw_summon()
-        board.draw_summon()
-
-    def clear_cultist(self, board, location):
-        if self.role.clear_all_cultists:
-            board.locations[location].cultists = 0
-        else:
-            board.locations[location].cultists -= 1
-
-    def action_move(self, board):
-        # get a location and move there. Sanity if shoggo
-        conns = board.locations[self.location].connections
-        new_loc = None
-        if len(conns) == 1:
-            new_loc = conns[0].name
-        if not new_loc:
-            new_loc = get_input(conns, 'name', 'Where would you like to move?')
-        self.location = new_loc.name
-        if board.locations[self.location].shoggoth:
-            print('You\'ve entered a location with a shoggoth. Performing a sanity roll...')
-            board.sanity_roll()
-        return 1
-
-    def action_bus(self, board):
-        raise NotImplementedError
-
-    def do_action(self, board, remaining_actions):
-        available = [
-            {'title': 'Move one location', 'action': self.action_move, }
-        ]
-        if board.locations[self.location].bus_stop:
-            available.append({'title': 'Take the bus', 'action': self.action_bus})
-
-        opt = get_input(available, 'title', 'You have {} action(s) remaining.'.format(remaining_actions))
-
-        return opt['action'](board)
-        # move
-        # bus
-        # trade
-        # clear cultist
-        # clear shoggoth
-        # seal gate
-        # play relic
-        # alien carving should return -3
 
 
 class Town(PandemicObject):

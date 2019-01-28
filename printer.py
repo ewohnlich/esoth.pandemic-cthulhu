@@ -1,6 +1,6 @@
 def print_player_hands(game):
     for player in game.players:
-        print('Hand for {} at {} : {}'.format(player.role.name, player.location,
+        print('Hand for {} at {} : {}'.format(player.name(), player.location,
                                               ', '.join(sorted(map(str, player.hand), ))))
 
 
@@ -16,8 +16,8 @@ ELDER_MAP = """
 Old Gods: {}
                       ARKHAM                                                       INNSMOUTH
 Train Station<b> - University ----- Police Station    Diner<b> ------- Junkyard     Hospital(G)  Boardwalk
-| s[ ]c[ ]       | s[ ]c[ ]      / | s[ ]c[ ]       _/ s[ ]c[ ]        | s[ ]c[ ]  / s[ ]c[ ]   /| s[ ]c[ ]
-|                |        ______/  |             __/                   |          /            / |
+| s[ ]c[ ]       | s[ ]c[ ]      / | s[ ]c[ ]       _/ s[ ]c[ ]        | s[ ]c[ ]  /|s[ ]c[ ]   /| s[ ]c[ ]
+|                |        ______/  |             __/                   |          / |          / |
 |                Park(G) /-------- Secret Lodge /                      Pawn Shop / Factory<b> /  Docks
 |                  s[ ]c[ ]         s[ ]c[ ]                            s[ ]c[ ]     s[ ]c[ ]   / s[ ]c[ ]
 |                 DUNWICH                                      ________________________________/
@@ -31,14 +31,16 @@ Cafe ----------- Church ------- Historic Inn<b>         Woods /------ Market<b> 
 
 
 def print_elder_map(game):
-    elder_map = ELDER_MAP.replace('s[ ]c[ ]', '{}')
+    elder_map = ELDER_MAP.replace('s[ ]c[ ] ', '{}')
     gods = ' '.join([god.revealed and god.name or '*' for god in game.old_gods])
     order = ['Train Station', 'University', 'Police Station', 'Diner', 'Junkyard', 'Hospital', 'Boardwalk',
              'Park', 'Secret Lodge', 'Pawn Shop', 'Factory', 'Docks', 'Cafe', 'Church', 'Historic Inn', 'Woods',
              'Market', 'Wharf', 'Old Mill', 'Farmstead', 'Swamp', 'Great Hall', 'Theater', 'Graveyard']
     details = []
     for loc in order:
-        details.append('{: <8}'.format('$' * game.locations[loc].shoggoth + '*' * game.locations[loc].cultists))
+        players = ''.join([str(player.number) for player in game.players if player.location == loc])
+        monsters = '{: <5}'.format('$' * game.locations[loc].shoggoth + '*' * game.locations[loc].cultists)
+        details.append(monsters + '{: <4}'.format(players))
     elder_map = elder_map.format(gods, *details)
     elder_map = elder_map.replace('(G)', '({})')
     elder_map = elder_map.format(*[town.elder_sign and 'E' or town.sealed and 'X' or ' ' for town in game.towns])
