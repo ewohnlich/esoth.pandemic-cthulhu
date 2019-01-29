@@ -66,6 +66,10 @@ def shubniggurath_action(board, player=None):
         board.draw_summon()
 
 
+def atlatch_action(board, player=None):
+    raise NotImplementedError
+
+
 def shudmell_action(board, player=None):
     pool = len(board.players) + 1
     sane_players = [player for player in board.players if player.sanity]
@@ -103,7 +107,7 @@ def get_old_gods():
         OldGod('Azathoth', 'Remove 3 cultists from the unused supply', action=azathoth_action, recurring=True),
         OldGod('Atlatch-Nacha', 'Each investigator puts 1 cultist on their location unless they choose to lose 1 '
                                 'sanity. An investigator may not lose their last sanity token to prevent this cultist '
-                                'placement.'),
+                                'placement.', action=atlatch_action),
         OldGod('Shud\'Mell', 'All players collectively lose 3/4/5 sanity tokens [with 2/3/4 players].',
                action=shudmell_action),
         OldGod('Yog-Sothoth', 'Playing Relic cards can only be done by the active player.', recurring=True),
@@ -163,7 +167,7 @@ def get_player_relic_decks(num_players=2):
     relics = get_relics()
     player_deck = town_deck + relics[:2 + num_players]
     shuffle(player_deck)
-    relics = relics[2 + num_players]
+    relics = relics[2 + num_players:]
     return player_deck, relics
 
 
@@ -234,7 +238,9 @@ class EvilStirs(PandemicCard):
 class Role(PandemicObject):
     name = ''
     action_modifier = 0
+    seal_modifier = 0
     clear_all_cultists = False
+    move_modifier = False
 
     def __init__(self, name, **kwargs):
         super(Role, self).__init__(name)
@@ -248,13 +254,13 @@ class RoleManager(object):
 
     def __init__(self):
         self.roles = [
-            Role(name='Detective'),
+            Role(name='Detective', seal_modifier=1),
             Role(name='Doctor', action_modifier=1),
-            Role(name='Driver'),
+            Role(name='Driver', move_modifier=True),
             Role(name='Hunter', clear_all_cultists=True),
             Role(name='Magician'),
             Role(name='Occultist'),
-            Role(name='Report'),
+            Role(name='Reporter'),
         ]
         self.shuffle()
         self.active_role = self.roles.pop()

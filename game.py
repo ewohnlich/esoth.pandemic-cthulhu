@@ -1,12 +1,10 @@
 from collections import deque
 from random import shuffle, choice
 
-from utils import PandemicObject, get_input
+from utils import PandemicObject, get_input, AUTO_ASSIGNMENT
 from decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, PandemicCard, RoleManager
 from printer import print_player_hands, print_elder_map
 from player import Player
-
-AUTO_ASSIGNMENT = True  # automatically set roles if true, easier for testing
 
 
 class GameBoard(object):
@@ -152,7 +150,6 @@ class GameBoard(object):
         self.locations[shog.name].shoggoth = 1
         self.shoggoth_reserve -= 1
         self.announce('Placed a shoggoth at {}'.format(shog.name))
-        self.shoggoth_reserve -= 1
 
     def deal_players(self):
         for player in self.players:
@@ -160,6 +157,13 @@ class GameBoard(object):
             while start:
                 player.deal(self)
                 start -= 1
+
+    def draw_relic_card(self, player):
+        if self.relic_deck:
+            relic = self.relic_deck.pop()
+            self.announce('{} draws a relic card. {}: {}'.format(self.current_player.name(), relic.name, relic.text))
+            player.hand.append(relic)
+            player.limit_hand(self)
 
     def draw_player_card(self):
         if self.player_deck:
@@ -225,7 +229,7 @@ class GameBoard(object):
         while not self.have_lost() and not self.have_won():
             self.current_player = self.players[turn % len(self.players)]
             print_player_hands(self)
-            self.announce('It is now {}\'s turn (turn {})'.format(self.current_player.name(), turn+1))
+            self.announce('It is now {}\'s turn (turn {})'.format(self.current_player.name(), turn + 1))
             self.current_player.do_turn(self)
             print_elder_map(self)
             turn += 1
@@ -277,7 +281,8 @@ class GameBoard(object):
             if location.shoggoth:
                 location.shoggoth -= 1
                 if location.gate:
-                    self.announce('The Shoggoth at {} enters the gate, triggering an awakening ritual'.format(location.name))
+                    self.announce(
+                        'The Shoggoth at {} enters the gate, triggering an awakening ritual'.format(location.name))
                     awaken += 1
                 else:
                     opts = {}
@@ -293,13 +298,35 @@ class GameBoard(object):
                     if len(opts) == 1:
                         opts[0].shoggoth += 1
                         self.announce('Shoggoth moves from {} to {}'.format(location.name, opts[0].name))
+                        for player in self.players:
+                            if player.location == opts[0].name:
+                                self.announce('Shoggoth enters the location of {}, performing a sanity roll'.format(
+                                    player.name()))
+                                self.sanity_roll(player)
                     else:
                         choice = get_input(opts, 'name', 'Shoggoth move options at {} are equidistant. '
                                                          'Current player chooses'.format(location.name))
                         choice.shoggoth += 1
+                        for player in self.players:
+                            if player.location == choice.name:
+                                self.announce('Shoggoth enters the location of {}, performing a sanity roll'.format(
+                                    player.name()))
+                                self.sanity_roll(player)
                         self.announce('Shoggoth moves from {} to {}'.format(location.name, choice.name))
         for i in range(awaken):
             self.awakening_ritual()
+
+    def move_player(self, location):
+        """ Moves player to a location and checks for Shoggoth
+
+        :return: None
+        """
+        player = self.current_player
+        player.location = location
+        self.announce('{} moves to {}'.format(player.name(), location))
+        if self.locations[player.location].shoggoth:
+            self.announce('You\'ve entered a location with a shoggoth. Performing a sanity roll...')
+            self.sanity_roll()
 
     def get_shoggoth_sites(self):
         locs = []
@@ -328,7 +355,7 @@ class GameBoard(object):
         self.summon_discards = []
 
     def have_won(self):
-        sealed = [loc for loc in self.locations.values() if loc.sealed]
+        sealed = [town for town in self.towns if town.sealed]
         return len(sealed) == 4
 
     def have_lost(self):
@@ -361,7 +388,6 @@ class Location(PandemicObject):
     cultists = 0
     connections = None
     gate = False
-    sealed = False
     town = None
     shoggoth = 0  # could technically have multiple
 
@@ -373,8 +399,3 @@ class Location(PandemicObject):
             town.locations.append(self)
         self.bus_stop = bus_stop
         self.gate = gate
-
-# Player
-# deck
-# location
-# sanity

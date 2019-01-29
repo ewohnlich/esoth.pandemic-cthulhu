@@ -1,3 +1,10 @@
+SEAL_GATE_BASE_COST = 5
+SANITY_BASE = 4
+DEFEAT_SHOGGOTH_COST = 3
+ACTIONS_BASE = 4
+AUTO_ASSIGNMENT = False # True  # automatically set roles if true, easier for testing
+
+
 class PandemicObject(object):
     name = ''
 
@@ -5,7 +12,10 @@ class PandemicObject(object):
         self.name = name
 
     def __repr__(self):
-        return '<{}: {}>'.format(self.__class__.__name__, self.name)
+        name = self.name
+        if callable(name):
+            name = name()
+        return '<{}: {}>'.format(self.__class__.__name__, name)
 
     def __lt__(self, other):
         if isinstance(other, PandemicObject):
