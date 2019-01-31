@@ -76,7 +76,7 @@ def shudmell_action(board, player=None):
     while sane_players and pool:
         try:
             opts = ' '.join(
-                ['({}) {}[{}]'.format(idx + 1, player.name, player.sanity) for idx, player in enumerate(sane_players)])
+                ['({}) {}[{}]'.format(idx + 1, player.name(), player.sanity) for idx, player in enumerate(sane_players)])
             choice = input(
                 'You must collectively lose {} more sanity. Which player should lose the next one? {}: '.format(pool,
                                                                                                                 opts))
@@ -111,7 +111,7 @@ def get_old_gods():
         OldGod('Shud\'Mell', 'All players collectively lose 3/4/5 sanity tokens [with 2/3/4 players].',
                action=shudmell_action),
         OldGod('Yog-Sothoth', 'Playing Relic cards can only be done by the active player.', recurring=True),
-        OldGod('Hastor', 'Draw the bottom card from the Summoning deck. Place 1 Shoggoth on that location.'
+        OldGod('Hastor', 'Draw the bottom card from the Summoning deck. Place 1 Shoggoth on that location. '
                          'Discard that card to the Summoning discard pile. Then move each Shoggoth 1 location closer '
                          'to the nearest open gate.', action=hastor_action),
         OldGod('Yigg', 'Sealing gates requires 1 additional Clue card from a connected town.', recurring=True),

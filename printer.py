@@ -1,7 +1,7 @@
 def print_player_hands(game):
     for player in game.players:
         print('Hand for {}: -- {} cards -- {}'.format(player.name(), len(player.hand),
-                                              ', '.join(sorted(map(str, player.hand), ))))
+                                                      ', '.join(sorted(map(str, player.hand), ))))
 
 
 def print_shoggoth_locations(game):
@@ -46,5 +46,7 @@ def print_elder_map(game):
     elder_map = elder_map.format(gods, len(game.player_deck), len(game.player_discards), len(game.relic_deck),
                                  len(game.summon_discards), game.cultist_reserve, game.shoggoth_reserve, *details)
     elder_map = elder_map.replace('(G)', '({})')
-    elder_map = elder_map.format(*[town.elder_sign and 'E' or town.sealed and 'X' or ' ' for town in game.towns])
+    town_order = ('Innsmouth', 'Arkham', 'Dunwich', 'Kingsport')
+    towns = sorted(game.towns, key=lambda x: town_order.index(x.name))  # when printing map, Innsmouth comes first
+    elder_map = elder_map.format(*[town.elder_sign and 'E' or town.sealed and 'X' or ' ' for town in towns])
     print(elder_map)

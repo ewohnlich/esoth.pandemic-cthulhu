@@ -97,7 +97,7 @@ class GameBoard(object):
             Location('Wharf', town=kingsport, bus_stop=False, gate=False),
             Location('Graveyard', town=kingsport, bus_stop=False, gate=True),
             Location('Junkyard', town=innsmouth, bus_stop=False, gate=False),
-            Location('Pawn Shop', town=innsmouth, bus_stop=False, gate=True),
+            Location('Pawn Shop', town=innsmouth, bus_stop=False, gate=False),
             Location('Hospital', town=innsmouth, bus_stop=False, gate=True),
             Location('Factory', town=innsmouth, bus_stop=True, gate=False),
             Location('Docks', town=innsmouth, bus_stop=False, gate=False),
@@ -121,7 +121,7 @@ class GameBoard(object):
         add_conn('Cafe', 'Train Station', 'Church')
         add_conn('Old Mill', 'Church')
         add_conn('Church', 'Old Mill', 'Farmstead', 'Cafe', 'Historic Inn')
-        add_conn('Farmstead', 'Swamp', 'Church')
+        add_conn('Farmstead', 'Swamp', 'Church', 'Historic Inn')
         add_conn('Swamp', 'Farmstead', 'Great Hall')
         add_conn('Historic Inn', 'Church', 'Farmstead')
         add_conn('Great Hall', 'Swamp', 'Woods', 'Market')
@@ -259,7 +259,7 @@ class GameBoard(object):
     def move_shoggoths(self):
         """ Shoggoths move to the closest gate
 
-            Special casees: 1. If two or more options are equidistant from a gate, player chooses
+            Special cases: 1. If two or more options are equidistant from a gate, player chooses
                             2. If shoggoth is on a gate, trigger an awakening ritual
         """
 
@@ -284,6 +284,7 @@ class GameBoard(object):
                     self.announce(
                         'The Shoggoth at {} enters the gate, triggering an awakening ritual'.format(location.name))
                     awaken += 1
+                    self.shoggoth_reserve += 1
                 else:
                     opts = {}
                     for conn in location.connections:

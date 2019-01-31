@@ -2,7 +2,7 @@ SEAL_GATE_BASE_COST = 5
 SANITY_BASE = 4
 DEFEAT_SHOGGOTH_COST = 3
 ACTIONS_BASE = 4
-AUTO_ASSIGNMENT = False # True  # automatically set roles if true, easier for testing
+AUTO_ASSIGNMENT = True  # automatically set roles if true, easier for testing
 
 
 class PandemicObject(object):
@@ -46,6 +46,8 @@ def get_input(options, attr, prompt):
                     element = getattr(opt, attr)
                 if isinstance(opt, dict):
                     element = opt[attr]
+            if callable(element):
+                element = element()
             opts.append('({}) {}'.format(idx + 1, element))
         opts = ' '.join(opts)
 

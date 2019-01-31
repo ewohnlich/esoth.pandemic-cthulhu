@@ -1,4 +1,4 @@
-from decks import PandemicCard
+from decks import PandemicCard, Relic
 from utils import PandemicObject, get_input, SEAL_GATE_BASE_COST, SANITY_BASE, DEFEAT_SHOGGOTH_COST, ACTIONS_BASE
 
 PLAYERS = 1
@@ -38,7 +38,8 @@ class Player(PandemicObject):
 
     def limit_hand(self, game):
         while len(self.hand) > 7:
-            discard = get_input(self.hand, None, 'You are over the hand limit. Enter a number to discard')
+            discard = get_input(self.hand, None,
+                                '{} is over the hand limit. Enter a number to discard'.format(self.name()))
             self.hand.remove(discard)
             game.discard(discard)
 
@@ -48,7 +49,7 @@ class Player(PandemicObject):
             actions -= 1
         while actions > 0:
             cost = self.do_action(game, actions)
-            actions -= cost
+            actions -= cost or 0
         game.announce('{} actions over, now drawing cards...\n'.format(self.role.name))
         self.deal(game, count=2)
         game.draw_summon()
@@ -83,7 +84,7 @@ class Player(PandemicObject):
         conns = game.locations[self.location].connections
         new_loc = None
         if len(conns) == 1:
-            new_loc = conns[0].name
+            new_loc = conns[0]
         if not new_loc:
             new_loc = get_input(conns, 'name', 'Where would you like to move?')
         game.move_player(new_loc.name)
@@ -131,6 +132,99 @@ class Player(PandemicObject):
         """ Player passes """
         return 1
 
+    @property
+    def relics(self):
+        return [card for card in self.hand if isinstance(card, Relic)]
+
+    def give_town_card_recipients(self, game):
+        shared = []
+        if game.locations[self.location].town.name in self.hand:
+            for player in game.players:
+                if player is not self and player.location == self.location:
+                    shared.append(player)
+        return shared
+
+    def give_relic_recipients(self, game):
+        shared = []
+        if self.relics:
+            for player in game.players:
+                if player is not self and player.location == self.location:
+                    shared.append(player)
+        return shared
+
+    def take_town_card_candidates(self, game):
+        shared = []
+        town = game.locations[self.location].town.name
+        for player in game.players:
+            if player is not self and player.location == self.location and town in player.hand:
+                shared.append(player)
+        return shared
+
+    def take_relic_candidates(self, game):
+        shared = []
+        for player in game.players:
+            if player is not self and player.location == self.location and player.relics:
+                shared.append(player)
+        return shared
+
+    def action_give_town_card(self, game):
+        transfer = game.locations[self.location].town.name
+        recipients = self.give_town_card_recipients(game)
+        if len(recipients) == 1:
+            recipient = recipients[0]
+        else:
+            recipient = get_input(recipients, 'name', 'Who do you want to give a card to?')
+        self.hand.remove(transfer)
+        recipient.hand.append(transfer)
+        game.announce('{} gives {} to {}'.format(self.name(), transfer, recipient.name()))
+        recipient.limit_hand(game)
+        return 1
+
+    def action_give_relic(self, game):
+        if len(self.relics) == 1:
+            transfer = self.relics[0]
+        else:
+            transfer = get_input(self.relics, None, 'Which relic do you want to give?')
+        recipients = self.give_relic_recipients(game)
+        if len(recipients) == 1:
+            recipient = recipients[0]
+        else:
+            recipient = get_input(recipients, 'name', 'Who do you want to give the relic to?')
+        self.hand.remove(transfer)
+        recipient.hand.append(transfer)
+        game.announce('{} gives {} to {}'.format(self.name(), transfer, recipient.name()))
+        recipient.limit_hand(game)
+        return 1
+
+    def action_take_town_card(self, game):
+        transfer = game.locations[self.location].town.name
+        candidates = self.take_town_card_candidates(game)
+        if len(candidates) == 1:
+            candidate = candidates[0]
+        else:
+            candidate = get_input(candidates, 'name', 'Who do you want to take a card from?')
+        candidate.hand.remove(transfer)
+        self.hand.append(transfer)
+        game.announce('{} takes {} from {}'.format(self.name(), transfer, candidate.name()))
+        self.limit_hand(game)
+        return 1
+
+    def action_take_relic(self, game):
+        candidates = self.take_relic_candidates(game)
+        if len(candidates) == 1:
+            candidate = candidates[0]
+        else:
+            candidate = get_input(candidates, 'name', 'Who do you want to take a relic from?')
+        if len(candidate.relics) == 1:
+            transfer = candidate.relics[0]
+        else:
+            transfer = get_input(candidate.relics, None, 'Which relic do you want to take?')
+        candidate.hand.remove(transfer)
+        self.hand.append(transfer)
+        game.announce('{} takes {} from {}'.format(self.name(), transfer, candidate.name()))
+        self.limit_hand(game)
+        return 1
+
     def do_action(self, game, remaining_actions):
         available = [
             {'title': 'Walk to a location', 'action': self.action_walk, }
@@ -145,6 +239,14 @@ class Player(PandemicObject):
         if curr_loc.gate and not curr_loc.town.sealed:
             if self.hand.count(curr_loc.town.name) + self.role.seal_modifier >= SEAL_GATE_BASE_COST:
                 available.append({'title': 'Seal gate', 'action': self.action_seal_gate})
+        if self.give_town_card_recipients(game):
+            available.append({'title': 'Give current town card', 'action': self.action_give_town_card})
+        if self.take_town_card_candidates(game):
+            available.append({'title': 'Take current town card', 'action': self.action_take_town_card})
+        if self.give_relic_recipients(game):
+            available.append({'title': 'Give relic', 'action': self.action_give_relic})
+        if self.take_relic_candidates(game):
+            available.append({'title': 'Take relic', 'action': self.action_take_relic})
 
         available.append({'title': 'Pass', 'action': self.ppass})
         opt = get_input(available, 'title', 'You have {} action(s) remaining.'.format(remaining_actions))
