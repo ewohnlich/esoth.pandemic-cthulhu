@@ -132,6 +132,24 @@ class Player(PandemicObject):
         """ Player passes """
         return 1
 
+    def can_gateway(self, game):
+        curr_loc = game.locations[self.location]
+        if curr_loc.gate and not curr_loc.town.sealed:
+            destinations = [loc for loc in game.locations.values() if
+                            loc is not curr_loc and loc.gate and not loc.town.sealed]
+            return destinations
+
+    def action_gateway(self, game):
+        destinations = self.can_gateway(game)
+        if len(destinations) == 1:
+            destination = destinations[0]
+        else:
+            destination = get_input(destinations, 'name', 'Where would you like to go?')
+        game.announce('{} takes the gate from {} to {}. This requires a sanity roll.'.format(self.name(), self.location,
+                                                                                             destination.name))
+        game.sanity_roll()
+        self.location = destination.name
+
     @property
     def relics(self):
         return [card for card in self.hand if isinstance(card, Relic)]
@@ -247,6 +265,8 @@ class Player(PandemicObject):
             available.append({'title': 'Give relic', 'action': self.action_give_relic})
         if self.take_relic_candidates(game):
             available.append({'title': 'Take relic', 'action': self.action_take_relic})
+        if self.can_gateway(game):
+            available.append({'title': 'Use gateway', 'action': self.action_gateway})
 
         available.append({'title': 'Pass', 'action': self.ppass})
         opt = get_input(available, 'title', 'You have {} action(s) remaining.'.format(remaining_actions))
