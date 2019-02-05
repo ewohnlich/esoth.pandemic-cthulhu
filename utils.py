@@ -3,13 +3,22 @@ SANITY_BASE = 4
 DEFEAT_SHOGGOTH_COST = 3
 ACTIONS_BASE = 4
 AUTO_ASSIGNMENT = True  # automatically set roles if true, easier for testing
+SKIP_SUMMON = 'Skip summon'
+SKIP_SANITY_CHECKS = 'Skip sanity checks'
+REDUCE_SEAL_COST = 'Reduce seal cost by 1'
+INCREASE_SEAL_COST = 'Increase seal cost by 1'
+ACTIVE_PLAYER_ONLY = 'Only active player can play relics'
+REDUCED_CULTIST_RESERVE = 'Reduced cultist reserve'
+MOVEMENT_RESTRICTION = 'Must defeat cultists to move if 2 or more'
+DISALLOW_GATE = 'Can no longer use gates'
 
 
 class PandemicObject(object):
     name = ''
 
     def __init__(self, name=''):
-        self.name = name
+        if name:
+            self.name = name
 
     def __repr__(self):
         name = self.name
@@ -28,7 +37,7 @@ class PandemicObject(object):
         return self.__repr__() > other
 
 
-def get_input(options, attr, prompt):
+def get_input(options, attr, prompt, force=False):
     """ Prompt the user for a selection
     
     :param options: actual python objects to be chosen
@@ -36,6 +45,9 @@ def get_input(options, attr, prompt):
     :param prompt: prompt text
     :return: 
     """
+    if not force:
+        if len(options) == 1:
+            return options[0]
     selection = None
     while not selection:
         opts = []

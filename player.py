@@ -1,5 +1,6 @@
 from decks import PandemicCard, Relic
-from utils import PandemicObject, get_input, SEAL_GATE_BASE_COST, SANITY_BASE, DEFEAT_SHOGGOTH_COST, ACTIONS_BASE
+from utils import PandemicObject, get_input, SEAL_GATE_BASE_COST, SANITY_BASE, DEFEAT_SHOGGOTH_COST, ACTIONS_BASE, \
+    SKIP_SUMMON, ACTIVE_PLAYER_ONLY, MOVEMENT_RESTRICTION
 
 PLAYERS = 1
 
@@ -12,6 +13,7 @@ class Player(PandemicObject):
     number = 0
     location = 'Train Station'
     seal_modifier = 0
+    defeated_cultist_this_turn = False
 
     def __init__(self):
         global PLAYERS
@@ -44,6 +46,7 @@ class Player(PandemicObject):
             game.discard(discard)
 
     def do_turn(self, game):
+        self.defeated_cultist_this_turn = False  # reset
         actions = ACTIONS_BASE + self.role.action_modifier
         if not self.sanity:
             actions -= 1
@@ -52,8 +55,9 @@ class Player(PandemicObject):
             actions -= cost or 0
         game.announce('{} actions over, now drawing cards...\n'.format(self.role.name))
         self.deal(game, count=2)
-        game.draw_summon()
-        game.draw_summon()
+        if SKIP_SUMMON not in game.effects:
+            game.draw_summon()
+            game.draw_summon()
 
     def action_defeat_cultist(self, game):
         location = self.location
@@ -64,6 +68,7 @@ class Player(PandemicObject):
         else:
             game.locations[location].cultists -= 1
             game.announce('{} removes 1 cultist'.format(self.name()))
+        self.defeated_cultist_this_turn = True
         game.show_board()
         return 1
 
@@ -116,16 +121,11 @@ class Player(PandemicObject):
 
     def action_seal_gate(self, game):
         town = game.locations[self.location].town
-        for i in range(SEAL_GATE_BASE_COST - self.role.seal_modifier):
+        seal_cost = game.seal_cost(self.role.seal_modifier)
+        for i in range(seal_cost):
             self.hand.remove(town.name)
             game.discard(town.name)
-        town.sealed = True
-        for loc in town.locations:
-            if loc.cultists:
-                loc.cultists -= 1
-        game.announce(
-            'The gate in {} has been sealed! Cultists in this town reduced by 1 in each location'.format(town.name))
-        game.show_board()
+        game.seal_gate(town)
         return 1
 
     def ppass(self, game):
@@ -133,6 +133,8 @@ class Player(PandemicObject):
         return 1
 
     def can_gateway(self, game):
+        if MOVEMENT_RESTRICTION in game.effects:
+            return False
         curr_loc = game.locations[self.location]
         if curr_loc.gate and not curr_loc.town.sealed:
             destinations = [loc for loc in game.locations.values() if
@@ -243,12 +245,41 @@ class Player(PandemicObject):
         self.limit_hand(game)
         return 1
 
+    def can_playrelic(self, game):
+        if ACTIVE_PLAYER_ONLY in game.effects:
+            return bool([card for card in self.relics if card.playable(game)])
+        else:
+            for player in game.players:
+                relics = [card for card in player.relics if card.playable(game)]
+                if relics:
+                    return True
+
+    def action_play_relic(self, game):
+        all_relics = []
+        if ACTIVE_PLAYER_ONLY in game.effects:
+            all_relics = self.relics
+        else:
+            for player in game.players:
+                all_relics.extend([card for card in player.relics if card.playable(game)])
+        relic = get_input(all_relics, None, 'Choose a relic to play', force=True)
+        cost = 0
+        for player in game.players:
+            if relic in player.hand:
+                cost = relic.play(game, player)
+                player.hand.remove(relic)
+        return cost or 0
+
     def do_action(self, game, remaining_actions):
-        available = [
-            {'title': 'Walk to a location', 'action': self.action_walk, }
-        ]
+        """ TODO: convert these into Action subclasses? """
+        available = []
+        can_move = True
+        if game.locations[self.location].cultists >= 2 and MOVEMENT_RESTRICTION in game.effects:
+            can_move = self.defeated_cultist_this_turn
+
+        if can_move:
+            available.append({'title': 'Walk to a location', 'action': self.action_walk, })
         curr_loc = game.locations[self.location]
-        if curr_loc.bus_stop and self.hand:
+        if curr_loc.bus_stop and self.hand and can_move:
             available.append({'title': 'Take the bus', 'action': self.action_bus})
         if curr_loc.cultists:
             available.append({'title': 'Defeat cultist', 'action': self.action_defeat_cultist})
@@ -267,11 +298,10 @@ class Player(PandemicObject):
             available.append({'title': 'Take relic', 'action': self.action_take_relic})
         if self.can_gateway(game):
             available.append({'title': 'Use gateway', 'action': self.action_gateway})
+        if self.can_playrelic(game):
+            available.append({'title': 'Play relic', 'action': self.action_play_relic})
 
         available.append({'title': 'Pass', 'action': self.ppass})
         opt = get_input(available, 'title', 'You have {} action(s) remaining.'.format(remaining_actions))
 
         return opt['action'](game)
-        # trade
-        # play relic
-        # alien carving should return -3

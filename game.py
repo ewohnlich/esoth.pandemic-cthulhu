@@ -1,7 +1,8 @@
 from collections import deque
 from random import shuffle, choice
 
-from utils import PandemicObject, get_input, AUTO_ASSIGNMENT
+from utils import PandemicObject, get_input, AUTO_ASSIGNMENT, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
+    REDUCE_SEAL_COST, INCREASE_SEAL_COST
 from decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, PandemicCard, RoleManager
 from printer import print_player_hands, print_elder_map
 from player import Player
@@ -18,6 +19,7 @@ class GameBoard(object):
     relic_deck = None
     old_gods = None
     effects = None
+    _effect_tracker = None  # depreciate by 1 each turn. Allows effect to persist across turns
     players = None
     locations = None
     towns = None
@@ -31,6 +33,7 @@ class GameBoard(object):
         self.relic_deck = []
         self.old_gods = []
         self.effects = []
+        self.effect_tracker = {}
         self.players = []
         self.locations = {}
         self.towns = []
@@ -50,10 +53,10 @@ class GameBoard(object):
         self.current_player = self.players[0]
         self.player_deck, self.relic_deck = get_player_relic_decks(players)
         self.summon_deck = get_summon_deck()
-        self.setup_locations()
-        self.setup_cultists()
-        self.deal_players()
-        self.initialize_evil()
+        self._setup_locations()
+        self._setup_cultists()
+        self._deal_players()
+        self._initialize_evil()
 
     def announce(self, msg):
         """ The game is only text based now so it just prints to stdout
@@ -66,7 +69,7 @@ class GameBoard(object):
     def show_board(self):
         print_elder_map(self)
 
-    def setup_locations(self):
+    def _setup_locations(self):
         kingsport = Town('Kingsport')
         innsmouth = Town('Innsmouth')
         dunwich = Town('Dunwich')
@@ -137,7 +140,7 @@ class GameBoard(object):
         add_conn('Pawn Shop', 'Junkyard', 'Hospital')
         add_conn('Junkyard', 'Diner', 'Pawn Shop')
 
-    def setup_cultists(self):
+    def _setup_cultists(self):
         cultize = [3, 3, 2, 2, 1, 1]
         for count in cultize:
             draw = self.summon_deck.pop()
@@ -151,25 +154,14 @@ class GameBoard(object):
         self.shoggoth_reserve -= 1
         self.announce('Placed a shoggoth at {}'.format(shog.name))
 
-    def deal_players(self):
+    def _deal_players(self):
         for player in self.players:
             start = 4
             while start:
                 player.deal(self)
                 start -= 1
 
-    def draw_relic_card(self, player):
-        if self.relic_deck:
-            relic = self.relic_deck.pop()
-            self.announce('{} draws a relic card. {}: {}'.format(self.current_player.name(), relic.name, relic.text))
-            player.hand.append(relic)
-            player.limit_hand(self)
-
-    def draw_player_card(self):
-        if self.player_deck:
-            return self.player_deck.pop()
-
-    def initialize_evil(self):
+    def _initialize_evil(self):
         """ Divide the decks into 4 after players have each been dealt their cards
             Add 1 EvilStirs to each subset
             Shuffle each subset
@@ -187,8 +179,41 @@ class GameBoard(object):
             shuffle(deck)
             self.player_deck += deck
 
+    def seal_cost(self):
+        return sum([
+            SEAL_GATE_BASE_COST,
+            int(INCREASE_SEAL_COST in self.effects),
+            -1 * self.current_player.role.seal_modifier,
+            -1 * int(REDUCE_SEAL_COST in self.effects),
+        ])
+
+    def seal_gate(self, town):
+        town.sealed = True
+        for loc in town.locations:
+            if loc.cultists:
+                loc.cultists -= 1
+        if REDUCE_SEAL_COST in self.effects:
+            self.effects.remove(REDUCE_SEAL_COST)
+        self.announce(
+            'The gate in {} has been sealed! Cultists in this town reduced by 1 in each location'.format(town.name))
+        self.show_board()
+
+    def draw_relic_card(self, player):
+        if self.relic_deck:
+            relic = self.relic_deck.pop()
+            self.announce('{} draws a relic card. {}: {}'.format(self.current_player.name(), relic.name, relic.text))
+            player.hand.append(relic)
+            player.limit_hand(self)
+
+    def draw_player_card(self):
+        if self.player_deck:
+            return self.player_deck.pop()
+
     def add_cultist(self, location):
-        if self.locations[location].cultists == 3:
+        town = self.locations[location].town
+        if town.elder_sign:
+            self.announce('An elder sign prevents a cultist from being added to {}'.format(location))
+        elif self.locations[location].cultists == 3:
             # awaken ritual
             self.announce('{} is at cultist capacity - an awakening ritual occurs!'.format(location))
             self.awakening_ritual()
@@ -197,6 +222,9 @@ class GameBoard(object):
             self.announce('{} now has {} cultist(s)'.format(location, self.locations[location].cultists))
 
     def sanity_roll(self, player=None):
+        if SKIP_SANITY_CHECKS in self.effects:
+            self.announce('Active effect precludes the need for a sanity check')
+            return
         if not player:
             player = self.current_player
         choices = [(0, 0),  # sanity, cultists
@@ -223,6 +251,14 @@ class GameBoard(object):
                 god.activate(self)
                 break
 
+    def reset_states(self):
+        if SKIP_SUMMON in self.effects:
+            self.effects.remove(SKIP_SUMMON)
+        if SKIP_SANITY_CHECKS in self.effect_tracker:
+            if self.effect_tracker[SKIP_SANITY_CHECKS] <= 0:
+                self.effects.remove(SKIP_SANITY_CHECKS)
+            self.effect_tracker[SKIP_SANITY_CHECKS] -= 1
+
     def play(self):
         print_elder_map(self)
         turn = 0
@@ -231,6 +267,7 @@ class GameBoard(object):
             print_player_hands(self)
             self.announce('It is now {}\'s turn (turn {})'.format(self.current_player.name(), turn + 1))
             self.current_player.do_turn(self)
+            self.reset_states()
             print_elder_map(self)
             turn += 1
         condition = self.have_lost()
@@ -338,16 +375,20 @@ class GameBoard(object):
 
     def summon_shoggoth(self):
         summon = self.summon_deck.popleft()
-        self.announce('A Shoggoth has been summoned at {}'.format(summon.name))
-        self.shoggoth_reserve -= 1
-        if self.shoggoth_reserve < 0:
-            return  # stop here
-        self.summon_discards.append(summon)
-        self.locations[summon.name].shoggoth += 1
-        for player in self.players:
-            if player.location == summon.name:
-                self.sanity_roll(player)
-        return summon.name
+        town = self.locations[summon.name].town
+        if town.elder_sign:
+            self.announce('An elder sign prevents a shoggoth from being summoned to {}'.format(summon.name))
+        else:
+            self.announce('A Shoggoth has been summoned at {}'.format(summon.name))
+            self.shoggoth_reserve -= 1
+            if self.shoggoth_reserve < 0:
+                return  # stop here
+            self.summon_discards.append(summon)
+            self.locations[summon.name].shoggoth += 1
+            for player in self.players:
+                if player.location == summon.name:
+                    self.sanity_roll(player)
+            return summon.name
 
     def regroup_cultists(self):
         discards = self.summon_discards
@@ -364,7 +405,7 @@ class GameBoard(object):
             return 'Not enough cultists in reserve.'
         if self.shoggoth_reserve < 0:
             return 'Not enough shoggoths in reserve.'
-        if 'Cthulhu' in self.effects:
+        if self.old_gods[-1].revealed:
             return self.old_gods[-1].text
         if not any([player.sanity for player in self.players]):
             return 'All players are insane.'

@@ -27,6 +27,8 @@ Cafe ----------- Church ------- Historic Inn<b>         Woods /------ Market<b> 
               / |           _/                         |           /  |             |                 KINGSPORT
  Old Mill(G) /   Farmstead /---- Swamp --------------- Great Hall /   Theater       Graveyard(G)
    s[ ]c[ ]      s[ ]c[ ]        s[ ]c[ ]               s[ ]c[ ]       s[ ]c[ ]      s[ ]c[ ] 
+
+Effects: {}
  $=shoggoth *=cultist <b>=bus stop ( )=open gate (X)=sealed gate (E)=Elder Sign gate
 """
 
@@ -44,7 +46,8 @@ def print_elder_map(game):
         details.append(monsters + '{: <4}'.format(players))
 
     elder_map = elder_map.format(gods, len(game.player_deck), len(game.player_discards), len(game.relic_deck),
-                                 len(game.summon_discards), game.cultist_reserve, game.shoggoth_reserve, *details)
+                                 len(game.summon_discards), game.cultist_reserve, game.shoggoth_reserve, *details,
+                                 ','.join(game.effects))
     elder_map = elder_map.replace('(G)', '({})')
     town_order = ('Innsmouth', 'Arkham', 'Dunwich', 'Kingsport')
     towns = sorted(game.towns, key=lambda x: town_order.index(x.name))  # when printing map, Innsmouth comes first
