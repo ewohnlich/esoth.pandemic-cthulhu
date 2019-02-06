@@ -25,7 +25,7 @@ class GameBoard(object):
     towns = None
     current_player = None
 
-    def __init__(self):
+    def __init__(self, num_players=False):
         self.player_deck = []
         self.player_discards = []
         self.summon_deck = deque([])
@@ -39,19 +39,20 @@ class GameBoard(object):
         self.towns = []
         self.old_gods = get_old_gods()
 
-        players = input('Number of players [2/3/4]: ')
-        while players not in ['2', '3', '4']:
-            players = input('Invalid number. Number of players [2/3/4]:')
-        players = int(players)
+        if not num_players:
+            num_players = input('Number of players [2/3/4]: ')
+            while num_players not in ['2', '3', '4']:
+                num_players = input('Invalid number. Number of players [2/3/4]:')
+            num_players = int(num_players)
 
         rm = RoleManager()
-        while players:
+        while num_players:
             player = Player()
             rm.assign_role(player, AUTO_ASSIGNMENT)
             self.players.append(player)
-            players -= 1
+            num_players -= 1
         self.current_player = self.players[0]
-        self.player_deck, self.relic_deck = get_player_relic_decks(players)
+        self.player_deck, self.relic_deck = get_player_relic_decks(num_players)
         self.summon_deck = get_summon_deck()
         self._setup_locations()
         self._setup_cultists()
