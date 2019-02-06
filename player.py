@@ -1,5 +1,6 @@
 from decks import PandemicCard, Relic
 from utils import PandemicObject, get_input, SANITY_BASE, ACTIONS_BASE, SKIP_SUMMON
+from actions import build_actions
 
 PLAYERS = 1
 
@@ -47,15 +48,15 @@ class Player(PandemicObject):
 
     def do_turn(self, game):
         self.defeated_cultist_this_turn = False  # reset
-        actions = ACTIONS_BASE + self.role.action_modifier
+        num_actions = ACTIONS_BASE + self.role.action_modifier
         if not self.sanity:
-            actions -= 1
-        while actions > 0:
-            available = [action for action in game.actions if action.available(game, remaining_actions=actions)]
-            action = get_input(available, 'name', 'You have {} action(s) remaining.'.format(actions),
+            num_actions -= 1
+        while num_actions > 0:
+            available = [action for action in build_actions(game, self) if action.available(num_actions)]
+            action = get_input(available, 'name', 'You have {} action(s) remaining.'.format(num_actions),
                                force=True)
-            cost = action.run(game)
-            actions -= cost or 0
+            cost = action.run()
+            num_actions -= cost or 0
         game.announce('{} actions over, now drawing cards...\n'.format(self.role.name))
         self.deal(game, count=2)
         if SKIP_SUMMON not in game.effects:
