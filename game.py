@@ -1,11 +1,12 @@
 from collections import deque
 from random import shuffle, choice
 
+from decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, RoleManager
+from player import Player
+from printer import print_player_hands, print_elder_map
 from utils import PandemicObject, get_input, AUTO_ASSIGNMENT, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
     REDUCE_SEAL_COST, INCREASE_SEAL_COST
-from decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, PandemicCard, RoleManager
-from printer import print_player_hands, print_elder_map
-from player import Player
+from actions import get_actions
 
 
 class GameBoard(object):
@@ -24,6 +25,7 @@ class GameBoard(object):
     locations = None
     towns = None
     current_player = None
+    actions = None
 
     def __init__(self):
         self.player_deck = []
@@ -38,6 +40,7 @@ class GameBoard(object):
         self.locations = {}
         self.towns = []
         self.old_gods = get_old_gods()
+        self.actions = get_actions()
 
         players = input('Number of players [2/3/4]: ')
         while players not in ['2', '3', '4']:

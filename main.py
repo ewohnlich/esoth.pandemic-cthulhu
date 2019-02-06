@@ -41,7 +41,7 @@ def test_last_hourglass(game):
 
 if __name__ == '__main__':
     game = GameBoard()
-    test_last_hourglass(game)
+    test_ithaqua(game)
     game.play()
     # import code
     # variables = globals().copy()
