@@ -1,3 +1,4 @@
+import sys
 from collections import deque
 from random import shuffle, choice
 
@@ -24,8 +25,9 @@ class GameBoard(object):
     locations = None
     towns = None
     current_player = None
+    stream = sys.stdout
 
-    def __init__(self, num_players=False):
+    def __init__(self, num_players=False, stream=None):
         self.player_deck = []
         self.player_discards = []
         self.summon_deck = deque([])
@@ -37,7 +39,10 @@ class GameBoard(object):
         self.players = []
         self.locations = {}
         self.towns = []
-        self.old_gods = get_old_gods()
+        self.old_gods = get_old_gods(self)
+
+        if stream:
+            self.stream = stream
 
         if not num_players:
             num_players = input('Number of players [2/3/4]: ')
@@ -47,12 +52,12 @@ class GameBoard(object):
 
         rm = RoleManager()
         while num_players:
-            player = Player()
+            player = Player(len(self.players))
             rm.assign_role(player, AUTO_ASSIGNMENT)
             self.players.append(player)
             num_players -= 1
         self.current_player = self.players[0]
-        self.player_deck, self.relic_deck = get_player_relic_decks(num_players)
+        self.player_deck, self.relic_deck = get_player_relic_decks(self, num_players)
         self.summon_deck = get_summon_deck()
         self._setup_locations()
         self._setup_cultists()
@@ -65,7 +70,8 @@ class GameBoard(object):
         :param msg: message to print
         :return:
         """
-        print(msg)
+        if self.stream:
+            print(msg, file=self.stream)
 
     def show_board(self):
         print_elder_map(self)
@@ -168,7 +174,7 @@ class GameBoard(object):
             Shuffle each subset
             Concatenate subsets
         """
-        decks = [[] for d in range(4)]
+        decks = [[]] * 4
         curr_deck = 0
         while self.player_deck:
             draw = self.player_deck.pop()
@@ -176,7 +182,7 @@ class GameBoard(object):
             curr_deck += 1
         while decks:
             deck = decks.pop()
-            deck.append(EvilStirs())
+            deck.append(EvilStirs(self))
             shuffle(deck)
             self.player_deck += deck
 
@@ -249,7 +255,7 @@ class GameBoard(object):
         for god in self.old_gods:
             if not god.revealed:
                 god.revealed = True
-                god.activate(self)
+                god.activate()
                 break
 
     def reset_states(self):
@@ -261,7 +267,7 @@ class GameBoard(object):
             self.effect_tracker[SKIP_SANITY_CHECKS] -= 1
 
     def play(self):
-        print_elder_map(self)
+        self.show_board()
         turn = 0
         while not self.have_lost() and not self.have_won():
             self.current_player = self.players[turn % len(self.players)]
@@ -269,7 +275,7 @@ class GameBoard(object):
             self.announce('It is now {}\'s turn (turn {})'.format(self.current_player.name(), turn + 1))
             self.current_player.do_turn(self)
             self.reset_states()
-            print_elder_map(self)
+            self.show_board()
             turn += 1
         condition = self.have_lost()
         if condition:
@@ -289,12 +295,13 @@ class GameBoard(object):
             self.summon_deck = deque(discards)
             self.summon_discards = []
         summon = self.summon_deck.pop()
+        self.summon_discards.append(summon)
         self.announce('Summon deck draw: {}'.format(summon.name))
         self.add_cultist(summon.name)
         if summon.shoggoths:
             self.move_shoggoths()
 
-    def move_shoggoths(self):
+    def move_shoggoths(self, automate=False):
         """ Shoggoths move to the closest gate
 
             Special cases: 1. If two or more options are equidistant from a gate, player chooses
@@ -304,10 +311,10 @@ class GameBoard(object):
         def gate_distance(loc, visited=None):
             if not visited:
                 visited = []
-            if [conn for conn in loc.connections if conn.gate]:
+            if [_conn for _conn in loc.connections if _conn.gate]:
                 return 1
             visited.append(loc)
-            paths = [gate_distance(conn, visited) for conn in loc.connections if conn not in visited]
+            paths = [gate_distance(_conn, visited) for _conn in loc.connections if _conn not in visited]
             paths = [path for path in paths if path]  # dead end path is 0
             if paths:
                 distance = 1 + min(paths)
@@ -343,15 +350,18 @@ class GameBoard(object):
                                     player.name()))
                                 self.sanity_roll(player)
                     else:
-                        choice = get_input(opts, 'name', 'Shoggoth move options at {} are equidistant. '
-                                                         'Current player chooses'.format(location.name))
-                        choice.shoggoth += 1
+                        if automate:
+                            destination = opts[0]
+                        else:
+                            destination = get_input(opts, 'name', 'Shoggoth move options at {} are equidistant. '
+                                                                  'Current player chooses'.format(location.name))
+                        destination.shoggoth += 1
                         for player in self.players:
-                            if player.location == choice.name:
+                            if player.location == destination.name:
                                 self.announce('Shoggoth enters the location of {}, performing a sanity roll'.format(
                                     player.name()))
                                 self.sanity_roll(player)
-                        self.announce('Shoggoth moves from {} to {}'.format(location.name, choice.name))
+                        self.announce('Shoggoth moves from {} to {}'.format(location.name, destination.name))
         for i in range(awaken):
             self.awakening_ritual()
 

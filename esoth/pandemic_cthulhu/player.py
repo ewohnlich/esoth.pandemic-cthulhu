@@ -1,8 +1,6 @@
-from .decks import PandemicCard, Relic
-from .utils import PandemicObject, get_input, SANITY_BASE, ACTIONS_BASE, SKIP_SUMMON
 from .actions import build_actions
-
-PLAYERS = 1
+from .decks import Relic, EvilStirs
+from .utils import PandemicObject, get_input, SANITY_BASE, ACTIONS_BASE, SKIP_SUMMON
 
 
 class Player(PandemicObject):
@@ -15,24 +13,25 @@ class Player(PandemicObject):
     seal_modifier = 0
     defeated_cultist_this_turn = False
 
-    def __init__(self):
+    def __init__(self, num_existing=0):
         super(Player, self).__init__()
-        global PLAYERS
-        self.number = PLAYERS
-        PLAYERS += 1
+        self.number = num_existing + 1
         self.hand = []
         self.effects = []
 
     def name(self):
         return '{}({})'.format(self.role.name, self.number)
 
+    def sanity_name(self):
+        return '{} [{}]'.format(self.role.name, self.sanity)
+
     def deal(self, game, count=1):
         """ Don't check hand limit until all cards have been dealt """
         for i in range(count):
             card = game.draw_player_card()
             game.announce('{} drew a card: {}'.format(self.role.name, hasattr(card, 'name') and card.name or card))
-            if isinstance(card, PandemicCard) and card.name == 'Evil Stirs':
-                card.activate(game, self)
+            if isinstance(card, EvilStirs):
+                card.activate(self)
             else:
                 self.hand.append(card)
                 self.hand = sorted(self.hand)

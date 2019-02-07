@@ -1,7 +1,7 @@
 def print_player_hands(game):
     for player in game.players:
         print('Hand for {}: -- {} cards -- {}'.format(player.name(), len(player.hand),
-                                                      ', '.join(sorted(map(str, player.hand), ))))
+                                                      ', '.join(sorted(map(str, player.hand), ))), file=game.stream)
 
 
 def print_shoggoth_locations(game):
@@ -9,7 +9,7 @@ def print_shoggoth_locations(game):
     for loc in game.locations:
         if game.locations[loc].shoggoth:
             locs.append(loc)
-    print('Shoggoths located at: {}'.format(', '.join(locs)))
+    print('Shoggoths located at: {}'.format(', '.join(locs)), file=game.stream)
 
 
 ELDER_MAP = """
@@ -52,4 +52,4 @@ def print_elder_map(game):
     town_order = ('Innsmouth', 'Arkham', 'Dunwich', 'Kingsport')
     towns = sorted(game.towns, key=lambda x: town_order.index(x.name))  # when printing map, Innsmouth comes first
     elder_map = elder_map.format(*[town.elder_sign and 'E' or town.sealed and 'X' or ' ' for town in towns])
-    print(elder_map)
+    print(elder_map, file=game.stream)

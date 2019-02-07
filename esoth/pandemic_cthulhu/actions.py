@@ -131,15 +131,16 @@ class DefeatShoggoth(Action):
 class SealGate(Action):
     name = 'Seal gate'
 
-    def available(self, remaining_actions):
-        return self.player.hand.count(self.curr_loc().town.name) + self.player.role.seal_modifier >= SEAL_GATE_BASE_COST
+    def available(self, remaining_actions=None):
+        seal_cost = self.game.seal_cost()
+        return self.player.hand.count(self.curr_loc().town.name) + self.player.role.seal_modifier >= seal_cost
 
     def run(self):
         curr_loc = self.curr_loc()
         town = curr_loc.town
-        seal_cost = self.game.seal_cost(self.player.role.seal_modifier)
+        seal_cost = self.game.seal_cost()
         for i in range(seal_cost):
-            self.player(self.game).hand.remove(town.name)
+            self.player.hand.remove(town.name)
             self.game.discard(town.name)
             self.game.seal_gate(town)
         return 1
@@ -258,10 +259,10 @@ class PlayRelic(Action):
 
     def available(self, remaining_actions=None):
         if ACTIVE_PLAYER_ONLY in self.game.effects:
-            return bool([card for card in self.player.relics if card.playable(self.game)])
+            return bool([card for card in self.player.relics if card.playable()])
         else:
             for player in self.game.players:
-                relics = [card for card in player.relics if card.playable(self.game)]
+                relics = [card for card in player.relics if card.playable()]
                 if relics:
                     return True
 
@@ -271,7 +272,7 @@ class PlayRelic(Action):
             all_relics = self.player.relics
         else:
             for player in self.game.players:
-                all_relics.extend([card for card in player.relics if card.playable(self.game)])
+                all_relics.extend([card for card in player.relics if card.playable()])
         relic = get_input(all_relics, None, 'Choose a relic to play', force=True)
         cost = 0
         for player in self.game.players:
@@ -281,8 +282,8 @@ class PlayRelic(Action):
         return cost or 0
 
 
-class UseGateway(Action):
-    name = 'Use gateway'
+class UseGate(Action):
+    name = 'Use a gate'
 
     def available(self, remaining_actions=None):
         if MOVEMENT_RESTRICTION in self.game.effects:
@@ -321,7 +322,7 @@ def build_actions(game, player):
     return [
         Walk(game, player),
         Bus(game, player),
-        UseGateway(game, player),
+        UseGate(game, player),
         DefeatCultist(game, player),
         DefeatShoggoth(game, player),
         SealGate(game, player),
