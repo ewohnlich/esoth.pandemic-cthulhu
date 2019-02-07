@@ -1,6 +1,7 @@
-from .base import PandemicCthulhuTestCase
-from esoth.pandemic_cthulhu.decks import Ithaqua
 from esoth.pandemic_cthulhu.actions import Walk
+from esoth.pandemic_cthulhu.decks import Ithaqua
+
+from .base import PandemicCthulhuTestCase
 
 
 class GodCase(PandemicCthulhuTestCase):

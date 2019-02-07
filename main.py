@@ -1,6 +1,6 @@
-from .game import GameBoard
-from .decks import *
-from .printer import print_elder_map
+from esoth.pandemic_cthulhu.game import GameBoard
+from esoth.pandemic_cthulhu.decks import *
+from esoth.pandemic_cthulhu.printer import print_elder_map
 
 
 def test_shubmell(game):
@@ -41,12 +41,4 @@ def test_last_hourglass(game):
 
 if __name__ == '__main__':
     game = GameBoard()
-    test_ithaqua(game)
     game.play()
-    # import code
-    # variables = globals().copy()
-    # variables.update(locals())
-    # shell = code.InteractiveConsole(variables)
-    # shell.interact()
-    # game.move_shoggoths()
-    # game.move_shoggoths()

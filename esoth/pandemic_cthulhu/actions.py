@@ -124,7 +124,7 @@ class DefeatShoggoth(Action):
     def run(self):
         self.curr_loc().shoggoth -= 1
         self.game.shoggoth_reserve += 1
-        self.game.draw_relic_card(self)
+        self.game.draw_relic_card(self.player)
         return 3
 
 
