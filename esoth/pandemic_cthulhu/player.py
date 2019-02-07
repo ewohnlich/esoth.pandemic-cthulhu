@@ -1,6 +1,6 @@
-from decks import PandemicCard, Relic
-from utils import PandemicObject, get_input, SANITY_BASE, ACTIONS_BASE, SKIP_SUMMON
-from actions import build_actions
+from .decks import PandemicCard, Relic
+from .utils import PandemicObject, get_input, SANITY_BASE, ACTIONS_BASE, SKIP_SUMMON
+from .actions import build_actions
 
 PLAYERS = 1
 

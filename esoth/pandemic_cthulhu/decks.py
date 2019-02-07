@@ -3,7 +3,7 @@ import sys
 from collections import deque
 from random import shuffle
 
-from utils import PandemicObject, SKIP_SUMMON, SKIP_SANITY_CHECKS, REDUCE_SEAL_COST, ACTIVE_PLAYER_ONLY, \
+from .utils import PandemicObject, SKIP_SUMMON, SKIP_SANITY_CHECKS, REDUCE_SEAL_COST, ACTIVE_PLAYER_ONLY, \
     REDUCED_CULTIST_RESERVE, MOVEMENT_RESTRICTION, INCREASE_SEAL_COST, get_input, SANITY_BASE
 
 

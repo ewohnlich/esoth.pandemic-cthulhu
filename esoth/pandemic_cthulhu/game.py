@@ -1,10 +1,10 @@
 from collections import deque
 from random import shuffle, choice
 
-from decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, RoleManager
-from player import Player
-from printer import print_player_hands, print_elder_map
-from utils import PandemicObject, get_input, AUTO_ASSIGNMENT, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
+from .decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, RoleManager
+from .player import Player
+from .printer import print_player_hands, print_elder_map
+from .utils import PandemicObject, get_input, AUTO_ASSIGNMENT, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
     REDUCE_SEAL_COST, INCREASE_SEAL_COST
 
 

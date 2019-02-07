@@ -1,5 +1,5 @@
-from decks import Relic
-from utils import get_input, MOVEMENT_RESTRICTION, DEFEAT_SHOGGOTH_COST, SEAL_GATE_BASE_COST, ACTIVE_PLAYER_ONLY
+from .decks import Relic
+from .utils import get_input, MOVEMENT_RESTRICTION, DEFEAT_SHOGGOTH_COST, SEAL_GATE_BASE_COST, ACTIVE_PLAYER_ONLY
 
 
 class Action(object):
@@ -42,7 +42,7 @@ class Action(object):
 class Walk(Action):
     name = 'Walk to a location'
 
-    def available(self, remaining_actions):
+    def available(self, remaining_actions=None):
         return self.can_move()
 
     def run(self, double=False):

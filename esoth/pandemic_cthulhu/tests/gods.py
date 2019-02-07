@@ -1,5 +1,6 @@
 from .base import PandemicCthulhuTestCase
-from decks import Ithaqua
+from esoth.pandemic_cthulhu.decks import Ithaqua
+from esoth.pandemic_cthulhu.actions import Walk
 
 
 class GodCase(PandemicCthulhuTestCase):
@@ -9,4 +10,5 @@ class GodCase(PandemicCthulhuTestCase):
         game.old_gods[0] = Ithaqua()
         game.awakening_ritual()
         game.locations['Train Station'].cultists = 2
-        assert False  # todo
+        action = Walk(game, game.players[0])
+        self.assertFalse(action.available())

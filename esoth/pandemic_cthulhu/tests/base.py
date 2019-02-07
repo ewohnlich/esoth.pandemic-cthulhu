@@ -1,5 +1,5 @@
 from unittest import TestCase
-from game import GameBoard
+from esoth.pandemic_cthulhu.game import GameBoard
 
 
 class PandemicCthulhuTestCase(TestCase):

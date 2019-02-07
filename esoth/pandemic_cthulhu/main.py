@@ -1,6 +1,6 @@
-from game import GameBoard
-from decks import *
-from printer import print_elder_map
+from .game import GameBoard
+from .decks import *
+from .printer import print_elder_map
 
 
 def test_shubmell(game):
