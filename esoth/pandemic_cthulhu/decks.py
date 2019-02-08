@@ -34,16 +34,14 @@ class OldGod(PandemicCard):
     def activate(self, player=None):
         self.game.announce('** {} has been revealed! {} **'.format(self.name, self.text))
         self.revealed = True
+        if self.effect:
+            self.game.effects.append(self.effect)
 
 
 class Ithaqua(OldGod):
     name = 'Ithaqua'
     text = 'To walk out of a location with 2 or more cultists, a player must first defeat a Cultist at that location'
     effect = MOVEMENT_RESTRICTION
-
-    def activate(self, player=None):
-        super(Ithaqua, self).activate()
-        self.game.effects.append(self.effect)
 
 
 class Azathoth(OldGod):
@@ -54,7 +52,6 @@ class Azathoth(OldGod):
     def activate(self, player=None):
         super(Azathoth, self).activate()
         self.game.cultist_reserve -= 3
-        self.game.effects.append(self.effect)
 
 
 class AtlatchNacha(OldGod):
@@ -62,17 +59,14 @@ class AtlatchNacha(OldGod):
     text = 'Each investigator puts 1 cultist on their location unless they choose to lose 1 sanity. An investigator ' \
            'may not lose their last sanity token to prevent this cultist placement.'
 
-    def activate(self, player=None, automate=None):
+    def activate(self, player=None):
         super(AtlatchNacha, self).activate()
         for player in self.game.players:
             if player.sanity <= 1:
                 self.game.add_cultist(player.location)
             else:
                 choices = ['Lose 1 sanity', 'Put a cultist on their location']
-                if automate:
-                    choice = automate
-                else:
-                    choice = get_input(choices, None, 'Choice for {}'.format(player.name()))
+                choice = get_input(choices, None, 'Choice for {}'.format(player.name()))
                 if choices.index(choice) == 0:
                     player.sanity -= 1
                 else:
@@ -83,17 +77,14 @@ class ShudMell(OldGod):
     name = 'Shud\'Mell'
     text = 'All players collectively lose 3/4/5 sanity tokens [with 2/3/4 players].'
 
-    def activate(self, player=None, automate=None):
+    def activate(self, player=None):
         super(ShudMell, self).activate()
         pool = len(self.game.players) + 1
         sane_players = [player for player in self.game.players if player.sanity]
         while sane_players and pool:
-            if automate:
-                player = automate
-            else:
-                player = get_input(sane_players, 'sanity_name',
-                                   'You must collectively lose {} more sanity. Which player should lose '
-                                   'the next one?'.format(pool))
+            player = get_input(sane_players, 'sanity_name',
+                               'You must collectively lose {} more sanity. Which player should lose '
+                               'the next one?'.format(pool))
             player.sanity -= 1
             pool -= 1
         if pool and not sane_players:
@@ -104,10 +95,6 @@ class YogSothoth(OldGod):
     name = 'Yog-Sothoth'
     text = 'Playing Relic cards can only be done by the active player.'
     effect = ACTIVE_PLAYER_ONLY
-
-    def activate(self, player=None):
-        super(YogSothoth, self).activate()
-        self.game.effects.append(self.effect)
 
 
 class Hastor(OldGod):
@@ -126,10 +113,6 @@ class Yigg(OldGod):
     text = 'Sealing gates requires 1 additional Clue card from a connected town.'
     effect = INCREASE_SEAL_COST
 
-    def activate(self, player=None):
-        super(Yigg, self).activate()
-        self.game.effects.append(self.effect)
-
 
 class Dagon(OldGod):
     name = 'Dagon'
@@ -146,20 +129,14 @@ class Tsathaggua(OldGod):
     name = 'Tsathaggua'
     text = 'All players collectively discard 2/3/4 cards [with 2/3/4 players].'
 
-    def activate(self, player=None, automate=None):
+    def activate(self, player=None):
         super(Tsathaggua, self).activate()
         pool = len(self.game.players)
         while pool:
-            if automate:
-                player = automate
-            else:
-                player = get_input(self.game.players, 'name',
-                                   'You must collectively lose {} more card(s). Which player '
-                                   'should lose the next one?: '.format(pool))
-            if automate and player.hand:
-                discard = player.hand[0]
-            else:
-                discard = get_input(player.hand, None, 'Pick a card to discard')
+            player = get_input(self.game.players, 'name',
+                               'You must collectively lose {} more card(s). Which player '
+                               'should lose the next one?: '.format(pool))
+            discard = get_input(player.hand, None, 'Pick a card to discard')
             player.hand.remove(discard)
             self.game.discard(discard)
             player.sanity -= 1
@@ -171,16 +148,12 @@ class Nyarlothep(OldGod):
     text = 'Investigators may no longer do the Use a Gate action.'
     effect = MOVEMENT_RESTRICTION
 
-    def activate(self, player=None):
-        super(Nyarlothep, self).activate()
-        self.game.effects.append(self.effect)
-
 
 class ShubNiggurath(OldGod):
     name = 'Shub-Niggurath'
     text = 'Draw 4 cards from the bottom of the Summoning.'
 
-    def activate(self, player=None, automate=False):
+    def activate(self, player=None):
         super(ShubNiggurath, self).activate()
         for i in range(4):
             summon = self.game.summon_deck.popleft()
@@ -193,7 +166,7 @@ class ShubNiggurath(OldGod):
                 self.game.add_cultist(summon.name)
                 self.game.announce('A cultist has been summoned at {}'.format(summon.name))
                 if summon.shoggoths:
-                    self.game.move_shoggoths(automate)
+                    self.game.move_shoggoths()
 
 
 class Relic(PandemicCard):
@@ -268,19 +241,12 @@ class XaosMirror(Relic):
     text = 'You can swap one Clue card from your hand with a Clue card in another player\'s hand regardless of where ' \
            'either of you are'
 
-    def play(self, player, automate1=None, automate2=None):
+    def play(self, player):
         super(XaosMirror, self).play(player)
         teammate = get_input([p for p in self.game.players if p is not player], 'name', 'Who do you want to swap with?')
-        if automate1:
-            curr_discard = automate1
-        else:
-            curr_discard = get_input([card for card in player.hand if card != self], None,
-                                     'Which card are you swapping?')
-        if automate2:
-            their_discard = automate2
-        else:
-            their_discard = get_input([card for card in teammate.hand if card != self], None,
-                                      'Which card are you taking from them?')
+        curr_discard = get_input([card for card in player.hand if card != self], None, 'Which card are you swapping?')
+        their_discard = get_input([card for card in teammate.hand if card != self], None,
+                                  'Which card are you taking from them?')
         player.hand.append(their_discard)
         player.hand.remove(curr_discard)
         teammate.hand.append(curr_discard)
@@ -295,7 +261,8 @@ class SilverKey(Relic):
     def play(self, player):
         super(SilverKey, self).play(player)
         town = get_input(self.game.towns, 'name', 'You can move anywhere. First, select a town')
-        destination = get_input([l for l in town.locations], 'name', 'Select a location within {}'.format(town.name))
+        destination = get_input([l for l in town.locations], 'name',
+                                'Select a location within {}'.format(town.name))
         self.game.move_player(destination.name)
         return 0
 
@@ -327,6 +294,7 @@ class ElderSign(Relic):
         return [town for town in self.game.towns if town.sealed]
 
     def play(self, player):
+        super(ElderSign, self).play(player)
         town = get_input(self.playable(), 'name', 'Which town will you seal?')
         town.elder_sign = True
 
@@ -336,7 +304,16 @@ class BookOfShadow(Relic):
     text = 'Draw, look at, and rearrange the top 4 cards of the Player deck. Put them back on top'
 
     def play(self, player):
-        raise NotImplementedError  # lots of input, ugh
+        super(BookOfShadow, self).play(player)
+        top = []
+        new_order = []
+        for i in range(4):
+            top.append(self.game.player_deck.pop())
+        while top:
+            card = get_input(top, None, 'Which card should be placed back on the deck next?')
+            top.remove(card)
+            new_order.append(card)
+        self.game.player_deck += new_order
 
 
 class LastHourglass(Relic):
@@ -346,14 +323,12 @@ class LastHourglass(Relic):
     def playable(self):
         return sorted({card for card in self.game.player_discards if not isinstance(card, Relic)})
 
-    def play(self, player, automate=None):
-        if automate:
-            clue = automate
-        else:
-            clue = get_input(self.playable(), None, 'Select a Clue card')
+    def play(self, player):
+        super(LastHourglass, self).play(player)
+        clue = get_input(self.playable(), None, 'Select a Clue card')
         self.game.player_discards.remove(clue)
         self.game.current_player.hand.append(clue)
-        self.game.current_player.limit_hand(self.game)
+        self.game.current_player.limit_hand()
 
 
 class SealOfLeng(Relic):
@@ -361,23 +336,64 @@ class SealOfLeng(Relic):
     text = 'You may choose a revealed <infinity> Old One and cancel it\'s effect for the rest of the game. ' \
            'Cover that Old One\'s effect with this card as a reminder.'
 
+    def playable(self):
+        return [god for god in self.game.old_gods if god.revealed and god.effect]
+
     def play(self, player):
-        raise NotImplementedError
+        super(SealOfLeng, self).play(player)
+        god = get_input(self.playable(), 'name', 'Select an old god with an active effect')
+        god.name = 'SEAL OF LENG'
+        self.game.effects.remove(god.effect)
 
 
 class AlhazredsFlame(Relic):
     name = 'Alhazred\'s Flame'
     text = 'You may remove up to 4 cultists or 1 Shoggoth from anywhere on the board'
 
+    def playable(self):
+        return [loc for loc in self.game.locations.values() if loc.shoggoth or loc.cultists]
+
     def play(self, player):
-        raise NotImplementedError
+        super(AlhazredsFlame, self).play(player)
+        if not self.playable():
+            return
+        shoggo_locations = [loc for loc in self.game.locations.values() if loc.shoggoth]
+        cultist_locations = [loc for loc in self.game.locations.values() if loc.cultists]
+
+        def remove_shoggoth():
+            location = get_input(shoggo_locations, 'name', 'You can remove a shoggoth from a location: ')
+            location.shoggoth -= 1
+            self.game.shoggoth_reserve += 1
+
+        def remove_cultists():
+            events = 4
+            while events:
+                remaining = [loc for loc in self.game.locations.values() if loc.cultists]
+                if remaining:
+                    location = get_input(remaining, 'name',
+                                         'You can remove a cultist from {} location(s), pick one'.format(events))
+                    location.cultists -= 1
+                    self.game.cultist_reserve += 1
+                events -= 1
+
+        if shoggo_locations and not cultist_locations:
+            remove_shoggoth()
+        elif cultist_locations and not shoggo_locations:
+            remove_cultists()
+        else:
+            opts = ['Remove shoggoth', 'Remove 4 cultists']
+            opt = get_input(opts, None, 'Choose an option')
+            if opts.index(opt) == 0:
+                remove_shoggoth()
+            else:
+                remove_cultists()
 
 
 def get_old_gods(game):
     def is_god_class(value):
         return inspect.isclass(value) and issubclass(value, OldGod) and value is not OldGod
 
-    # don't initialize god class until we've shuffled and got five randos
+    # don't instantiate god class until we've shuffled and got five randos
     gods = [god_class for name, god_class in inspect.getmembers(sys.modules[__name__], is_god_class)]
     shuffle(gods)
     cthulhu = OldGod(game, name='Cthulhu', text='The world is plunged into an age of madness, chaos, and destruction. '

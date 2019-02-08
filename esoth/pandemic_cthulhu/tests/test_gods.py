@@ -24,15 +24,16 @@ class GodCase(PandemicCthulhuTestCase):
         self.assertIn(REDUCED_CULTIST_RESERVE, self.game.effects)
 
     def test_atlatchnacha(self):
+        self.dummy_gods()
         for player in self.game.players:
             self.assertEqual(player.sanity, 4)
-        AtlatchNacha(self.game).activate(automate='Lose 1 sanity')
+        AtlatchNacha(self.game).activate()
         for player in self.game.players:
             self.assertEqual(player.sanity, 3)
 
     def test_shudmell(self):
         self.assertEqual(self.player.sanity, 4)
-        ShudMell(self.game).activate(automate=self.player)
+        ShudMell(self.game).activate()
         self.assertEqual(self.player.sanity, 1)
 
     def test_yogsothoth(self):
@@ -88,7 +89,7 @@ class GodCase(PandemicCthulhuTestCase):
 
     def test_tsathaggua(self):
         self.assertEqual(len(self.player.hand), 4)
-        Tsathaggua(self.game).activate(automate=self.player)
+        Tsathaggua(self.game).activate()
         self.assertEqual(len(self.player.hand), 2)
 
     def test_nyarlothep(self):
@@ -105,6 +106,6 @@ class GodCase(PandemicCthulhuTestCase):
         # load the deck summons can't happen and trigger awakening rituals
         for card in self.game.summon_deck:
             card.shoggoths = False
-        ShubNiggurath(self.game).activate(automate=True)
+        ShubNiggurath(self.game).activate()
         self.assertEqual(len(self.game.summon_discards) - summons, 4)
         self.assertEqual(sum([loc.cultists for loc in self.game.locations.values()]) - num_cultists, 4)

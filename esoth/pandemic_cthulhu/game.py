@@ -52,7 +52,7 @@ class GameBoard(object):
 
         rm = RoleManager()
         while num_players:
-            player = Player(len(self.players))
+            player = Player(self)
             rm.assign_role(player, AUTO_ASSIGNMENT)
             self.players.append(player)
             num_players -= 1
@@ -165,7 +165,7 @@ class GameBoard(object):
         for player in self.players:
             start = 4
             while start:
-                player.deal(self)
+                player.deal()
                 start -= 1
 
     def _initialize_evil(self):
@@ -199,6 +199,7 @@ class GameBoard(object):
         for loc in town.locations:
             if loc.cultists:
                 loc.cultists -= 1
+                self.cultist_reserve += 1
         if REDUCE_SEAL_COST in self.effects:
             self.effects.remove(REDUCE_SEAL_COST)
         self.announce(
@@ -210,7 +211,7 @@ class GameBoard(object):
             relic = self.relic_deck.pop()
             self.announce('{} draws a relic card. {}: {}'.format(self.current_player.name(), relic.name, relic.text))
             player.hand.append(relic)
-            player.limit_hand(self)
+            player.limit_hand()
 
     def draw_player_card(self):
         if self.player_deck:
@@ -273,7 +274,7 @@ class GameBoard(object):
             self.current_player = self.players[turn % len(self.players)]
             print_player_hands(self)
             self.announce('It is now {}\'s turn (turn {})'.format(self.current_player.name(), turn + 1))
-            self.current_player.do_turn(self)
+            self.current_player.do_turn()
             self.reset_states()
             self.show_board()
             turn += 1

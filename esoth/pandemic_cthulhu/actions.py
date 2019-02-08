@@ -109,6 +109,7 @@ class DefeatCultist(Action):
             self.game.announce('{} removes all cultists'.format(self.player.name()))
         else:
             self.curr_loc().cultists -= 1
+            self.game.cultist_reserve += 1
             self.game.announce('{} removes 1 cultist'.format(self.player.name()))
         self.player.defeated_cultist_this_turn = True
         self.game.show_board()
@@ -168,7 +169,7 @@ class GiveClueCard(Action):
         self.player.hand.remove(transfer)
         recipient.hand.append(transfer)
         self.game.announce('{} gives {} to {}'.format(self.player.name(), transfer, recipient.name()))
-        recipient.limit_hand(self.game)
+        recipient.limit_hand()
         return 1
 
 
@@ -195,7 +196,7 @@ class TakeClueCard(Action):
         candidate.hand.remove(transfer)
         self.player.hand.append(transfer)
         self.game.announce('{} takes {} from {}'.format(self.player.name(), transfer, candidate.name()))
-        self.player.limit_hand(self.game)
+        self.player.limit_hand()
         return 1
 
 
@@ -223,7 +224,7 @@ class GiveRelic(Action):
         self.player.hand.remove(transfer)
         recipient.hand.append(transfer)
         self.game.announce('{} gives {} to {}'.format(self.player.name(), transfer, recipient.name()))
-        recipient.limit_hand(self.game)
+        recipient.limit_hand()
         return 1
 
 
@@ -250,7 +251,7 @@ class TakeRelic(Action):
         candidate.hand.remove(transfer)
         self.player.hand.append(transfer)
         self.game.announce('{} takes {} from {}'.format(self.player.name(), transfer, candidate.name()))
-        self.player.limit_hand(self.game)
+        self.player.limit_hand()
         return 1
 
 
@@ -266,18 +267,21 @@ class PlayRelic(Action):
                 if relics:
                     return True
 
-    def run(self):
+    def run(self, automate=False):
         all_relics = []
         if ACTIVE_PLAYER_ONLY in self.game.effects:
             all_relics = self.player.relics
         else:
             for player in self.game.players:
                 all_relics.extend([card for card in player.relics if card.playable()])
-        relic = get_input(all_relics, None, 'Choose a relic to play', force=True)
+        if automate:
+            relic = automate
+        else:
+            relic = get_input(all_relics, None, 'Choose a relic to play', force=True)
         cost = 0
         for player in self.game.players:
             if relic in player.hand:
-                cost = relic.play(self.game, player)
+                cost = relic.play(player)
                 player.hand.remove(relic)
         return cost or 0
 

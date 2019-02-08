@@ -1,3 +1,5 @@
+import os
+
 SEAL_GATE_BASE_COST = 5
 SANITY_BASE = 4
 DEFEAT_SHOGGOTH_COST = 3
@@ -11,6 +13,11 @@ ACTIVE_PLAYER_ONLY = 'Only active player can play relics'
 REDUCED_CULTIST_RESERVE = 'Reduced cultist reserve'
 MOVEMENT_RESTRICTION = 'Must defeat cultists to move if 2 or more'
 DISALLOW_GATE = 'Can no longer use gates'
+AUTOMATE_INPUT = 'Automate input'
+
+
+def automate():
+    return os.environ.get(AUTOMATE_INPUT)
 
 
 class PandemicObject(object):
@@ -43,8 +50,11 @@ def get_input(options, attr, prompt, force=False):
     :param options: actual python objects to be chosen
     :param attr: when displaying options, use this attribute of an element in options
     :param prompt: prompt text
+    :param force: if there's only one option, it will just be returned unless this is true
     :return: 
     """
+    if automate():
+        return options[0]
     if not force:
         if len(options) == 1:
             return options[0]
