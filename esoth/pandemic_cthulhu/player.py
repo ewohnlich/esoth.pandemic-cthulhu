@@ -1,6 +1,8 @@
-from .actions import build_actions
+import random
+
+from .actions import build_actions, PlayRelic
 from .decks import Relic, EvilStirs
-from .utils import PandemicObject, get_input, SANITY_BASE, ACTIONS_BASE, SKIP_SUMMON
+from .utils import PandemicObject, get_input, SANITY_BASE, ACTIONS_BASE, SKIP_SUMMON, MAGICIAN, DOCTOR
 
 
 class Player(PandemicObject):
@@ -10,9 +12,13 @@ class Player(PandemicObject):
     role = None
     number = 0
     location = 'Train Station'
-    seal_modifier = 0
-    defeated_cultist_this_turn = False
     game = None
+
+    # once per turn trackers
+    defeated_cultist_this_turn = False
+    defeated_shoggoth_this_turn = False
+    played_relic_this_turn = False
+    insane_hunter_paranoia = False
 
     def __init__(self, game):
         super(Player, self).__init__()
@@ -22,16 +28,16 @@ class Player(PandemicObject):
         self.effects = []
 
     def name(self):
-        return '{}({})'.format(self.role.name, self.number)
+        return '{}({})'.format(self.role, self.number)
 
     def sanity_name(self):
-        return '{} [{}]'.format(self.role.name, self.sanity)
+        return '{} [{}]'.format(self.role, self.sanity)
 
     def deal(self, count=1):
         """ Don't check hand limit until all cards have been dealt """
         for i in range(count):
             card = self.game.draw_player_card()
-            self.game.announce('{} drew a card: {}'.format(self.role.name, hasattr(card, 'name') and card.name or card))
+            self.game.announce('{} drew a card: {}'.format(self.role, hasattr(card, 'name') and card.name or card))
             if isinstance(card, EvilStirs):
                 card.activate(self)
             else:
@@ -40,8 +46,15 @@ class Player(PandemicObject):
 
         self.limit_hand()
 
+    def hand_limit(self):
+        """ max cards player can have """
+        if self.role == MAGICIAN and self.sanity:
+            return 8
+        return 7
+
     def limit_hand(self):
-        while len(self.hand) > 7:
+        """ reduce hand size to the hand_limit """
+        while len(self.hand) > self.hand_limit():
             discard = get_input(self.hand, None,
                                 '{} is over the hand limit. Enter a number to discard'.format(self.name()))
             self.hand.remove(discard)
@@ -49,7 +62,12 @@ class Player(PandemicObject):
 
     def do_turn(self):
         self.defeated_cultist_this_turn = False  # reset
-        num_actions = ACTIONS_BASE + self.role.action_modifier
+        self.defeated_shoggoth_this_turn = False
+        self.played_relic_this_turn = False
+        self.start_size = False
+        num_actions = ACTIONS_BASE
+        if self.role == DOCTOR:
+            num_actions += 1
         if not self.sanity:
             num_actions -= 1
         while num_actions > 0:
@@ -58,7 +76,9 @@ class Player(PandemicObject):
                                force=True)
             cost = action.run()
             num_actions -= cost or 0
-        self.game.announce('{} actions over, now drawing cards...\n'.format(self.role.name))
+        if self.role == MAGICIAN and not self.sanity and not self.played_relic_this_turn:
+            PlayRelic(self.game, self).run()
+        self.game.announce('{} actions over, now drawing cards...\n'.format(self.role))
         self.deal(count=2)
         if SKIP_SUMMON not in self.game.effects:
             self.game.draw_summon()
@@ -67,3 +87,8 @@ class Player(PandemicObject):
     @property
     def relics(self):
         return [card for card in self.hand if isinstance(card, Relic)]
+
+    def insane_hunter_roll(self):
+        """ special roll for insane hunter, the first time each turn they enter a location with no cultists """
+        if random.choice((0, 1)):
+            self.game.add_cultist(self.location)

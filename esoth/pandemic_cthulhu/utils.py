@@ -15,6 +15,14 @@ MOVEMENT_RESTRICTION = 'Must defeat cultists to move if 2 or more'
 DISALLOW_GATE = 'Can no longer use gates'
 AUTOMATE_INPUT = 'Automate input'
 
+DETECTIVE = 'Detective'
+MAGICIAN = 'Magician'
+DOCTOR = 'Doctor'
+DRIVER = 'Driver'
+HUNTER = 'Hunter'
+OCCULTIST = 'Occultist'
+REPORTER = 'Reporter'
+
 
 def automate():
     return os.environ.get(AUTOMATE_INPUT)

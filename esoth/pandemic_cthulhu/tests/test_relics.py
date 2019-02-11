@@ -1,7 +1,7 @@
-from esoth.pandemic_cthulhu.decks import AlienCarving, BizarreStatue, MiGoEye, XaosMirror, SilverKey, SongOfKadath, \
+from ..decks import AlienCarving, BizarreStatue, MiGoEye, XaosMirror, SilverKey, SongOfKadath, \
     ElderSign, LastHourglass, WardedBox, get_relics, Nyarlothep, BookOfShadow, SealOfLeng, AlhazredsFlame
-from esoth.pandemic_cthulhu.actions import PlayRelic, SealGate
-from esoth.pandemic_cthulhu.utils import SKIP_SUMMON, SKIP_SANITY_CHECKS
+from ..actions import PlayRelic, SealGate
+from ..utils import SKIP_SUMMON, SKIP_SANITY_CHECKS, MAGICIAN
 
 from .base import PandemicCthulhuTestCase
 
@@ -41,7 +41,6 @@ class RelicCase(PandemicCthulhuTestCase):
         self.clear_board(True)
         relic = BizarreStatue(self.game)
         relic.play(self.player)
-        self.player.role.action_modifier = -4  # don't do any actions
         discards = len(self.game.summon_discards)
         self.game.player_deck = ['Arkham'] * 4  # no evil stirs please!
         self.player.do_turn()
@@ -55,7 +54,7 @@ class RelicCase(PandemicCthulhuTestCase):
     def test_migoeye(self):
         self.clear_board(True)
         self.player.hand = ['Arkham'] * 4
-        self.player.role.seal_modifier = 0
+        self.player.role = 'Dummy'
         self.player.location = 'Park'
         action = SealGate(self.game, self.player)
         self.assertFalse(action.available())
@@ -129,10 +128,13 @@ class RelicCase(PandemicCthulhuTestCase):
     def test_last_hourglass(self):
         relic = LastHourglass(self.game)
         self.game.player_discards.append('Arkham')
-        self.assertEqual(len(self.player.hand), 4)
+        start_size = 4
+        if self.player.role == MAGICIAN:
+            start_size = 5
+        self.assertEqual(len(self.player.hand), start_size)
         relic.play(self.player)
         self.assertEqual(self.player.hand[-1], 'Arkham')
-        self.assertEqual(len(self.player.hand), 5)
+        self.assertEqual(len(self.player.hand), start_size + 1)
         self.assertRaises(IndexError, relic.play, self.player)
 
     def test_sealofleng(self):

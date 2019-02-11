@@ -3,8 +3,9 @@ import sys
 from collections import deque
 from random import shuffle
 
-from .utils import PandemicObject, SKIP_SUMMON, SKIP_SANITY_CHECKS, REDUCE_SEAL_COST, ACTIVE_PLAYER_ONLY, \
-    REDUCED_CULTIST_RESERVE, MOVEMENT_RESTRICTION, INCREASE_SEAL_COST, get_input, SANITY_BASE
+from .utils import PandemicObject, SKIP_SUMMON, SKIP_SANITY_CHECKS, DISALLOW_GATE, REDUCE_SEAL_COST, ACTIVE_PLAYER_ONLY, \
+    REDUCED_CULTIST_RESERVE, MOVEMENT_RESTRICTION, INCREASE_SEAL_COST, get_input, SANITY_BASE, DETECTIVE, MAGICIAN, \
+    DOCTOR, DRIVER, OCCULTIST, HUNTER, REPORTER
 
 
 class PandemicCard(PandemicObject):
@@ -146,7 +147,7 @@ class Tsathaggua(OldGod):
 class Nyarlothep(OldGod):
     name = 'Nyarlothep'
     text = 'Investigators may no longer do the Use a Gate action.'
-    effect = MOVEMENT_RESTRICTION
+    effect = DISALLOW_GATE
 
 
 class ShubNiggurath(OldGod):
@@ -188,6 +189,8 @@ class Relic(PandemicCard):
         :param player: player using the card, not necessarily the active player
         :return: action cost
         """
+        if player.role == MAGICIAN and not player.sanity:
+            return 0
         self.game.sanity_roll(player)
         return 0
 
@@ -487,32 +490,19 @@ class EvilStirs(PandemicCard):
         self.game.regroup_cultists()
 
 
-class Role(PandemicObject):
-    name = ''
-    action_modifier = 0
-    seal_modifier = 0
-    clear_all_cultists = False
-    move_modifier = False
-
-    def __init__(self, name, **kwargs):
-        super(Role, self).__init__(name)
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-
 class RoleManager(object):
     roles = []
     active_role = None
 
     def __init__(self):
         self.roles = [
-            Role(name='Detective', seal_modifier=1),
-            Role(name='Doctor', action_modifier=1),
-            Role(name='Driver', move_modifier=True),
-            Role(name='Hunter', clear_all_cultists=True),
-            Role(name='Magician'),
-            Role(name='Occultist'),
-            Role(name='Reporter'),
+            DETECTIVE,
+            DOCTOR,
+            DRIVER,
+            HUNTER,
+            MAGICIAN,
+            OCCULTIST,
+            REPORTER,
         ]
         self.shuffle()
         self.active_role = self.roles.pop()

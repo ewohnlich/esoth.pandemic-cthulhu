@@ -1,7 +1,7 @@
-from esoth.pandemic_cthulhu.actions import Walk, DefeatCultist, PlayRelic, SealGate, UseGate
-from esoth.pandemic_cthulhu.decks import Ithaqua, Azathoth, AtlatchNacha, ShudMell, YogSothoth, Hastor, Yigg, Dagon, \
+from ..actions import Walk, DefeatCultist, PlayRelic, SealGate, UseGate
+from ..decks import Ithaqua, Azathoth, AtlatchNacha, ShudMell, YogSothoth, Hastor, Yigg, Dagon, \
     Tsathaggua, Nyarlothep, ShubNiggurath, ElderSign
-from esoth.pandemic_cthulhu.utils import REDUCED_CULTIST_RESERVE, ACTIVE_PLAYER_ONLY, MOVEMENT_RESTRICTION
+from ..utils import REDUCED_CULTIST_RESERVE, ACTIVE_PLAYER_ONLY, MOVEMENT_RESTRICTION, DISALLOW_GATE, MAGICIAN
 
 from .base import PandemicCthulhuTestCase
 
@@ -66,7 +66,7 @@ class GodCase(PandemicCthulhuTestCase):
 
     def test_yigg(self):
         self.clear_board()
-        self.player.role.seal_modifier = 0  # no detective
+        self.player.role = 'Dummy'  # no detective
         self.player.hand = ['Arkham'] * 5
         self.player.location = 'Park'
         action = SealGate(self.game, self.player)
@@ -88,16 +88,19 @@ class GodCase(PandemicCthulhuTestCase):
         self.assertEqual(self.game.locations['Graveyard'].cultists, 1)
 
     def test_tsathaggua(self):
-        self.assertEqual(len(self.player.hand), 4)
+        start_size = 4
+        if self.player.role == MAGICIAN:
+            start_size +=1
+        self.assertEqual(len(self.player.hand), start_size)
         Tsathaggua(self.game).activate()
-        self.assertEqual(len(self.player.hand), 2)
+        self.assertEqual(len(self.player.hand), start_size-2)
 
     def test_nyarlothep(self):
         self.player.location = 'Park'
         action = UseGate(self.game, self.player)
         self.assertTrue(action.available())
         Nyarlothep(self.game).activate()
-        self.assertIn(MOVEMENT_RESTRICTION, self.game.effects)
+        self.assertIn(DISALLOW_GATE, self.game.effects)
         self.assertFalse(action.available())
 
     def test_shubniggurath(self):

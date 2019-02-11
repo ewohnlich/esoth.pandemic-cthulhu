@@ -6,7 +6,7 @@ from .decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilSt
 from .player import Player
 from .printer import print_player_hands, print_elder_map
 from .utils import PandemicObject, get_input, AUTO_ASSIGNMENT, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
-    REDUCE_SEAL_COST, INCREASE_SEAL_COST
+    REDUCE_SEAL_COST, INCREASE_SEAL_COST, DETECTIVE, MAGICIAN
 
 
 class GameBoard(object):
@@ -167,6 +167,8 @@ class GameBoard(object):
             while start:
                 player.deal()
                 start -= 1
+            if player.role == MAGICIAN:
+                self.draw_relic_card(player)
 
     def _initialize_evil(self):
         """ Divide the decks into 4 after players have each been dealt their cards
@@ -187,12 +189,14 @@ class GameBoard(object):
             self.player_deck += deck
 
     def seal_cost(self):
-        return sum([
+        cost = sum([
             SEAL_GATE_BASE_COST,
             int(INCREASE_SEAL_COST in self.effects),
-            -1 * self.current_player.role.seal_modifier,
             -1 * int(REDUCE_SEAL_COST in self.effects),
         ])
+        if self.current_player.role == DETECTIVE:
+            cost -= 1
+        return cost
 
     def seal_gate(self, town):
         town.sealed = True
