@@ -18,14 +18,8 @@ class RelicCase(PandemicCthulhuTestCase):
             self.game.players[0].hand = ['Arkham', 'Dunwich']
             self.game.players[1].hand = ['Innsmouth', 'Kingsport']
             if 'No sanity roll required' not in relic.text:
-                try:
-                    relic.play(self.player)
-                    self.assertIn('**', self.game.stream.getvalue())
-                except TypeError:
-                    relic.play(self.player)
-                    self.assertIn('**', self.game.stream.getvalue())
-                except NotImplementedError:
-                    pass
+                relic.play(self.player)
+                self.assertIn('**', self.game.stream.getvalue())
                 self.game.stream.truncate(0)
                 self.game.stream.seek(0)
 
@@ -54,7 +48,6 @@ class RelicCase(PandemicCthulhuTestCase):
     def test_migoeye(self):
         self.clear_board(True)
         self.player.hand = ['Arkham'] * 4
-        self.player.role = 'Dummy'
         self.player.location = 'Park'
         action = SealGate(self.game, self.player)
         self.assertFalse(action.available())
@@ -126,15 +119,13 @@ class RelicCase(PandemicCthulhuTestCase):
         self.assertEqual(self.game.player_deck[-4:], new_towns)
 
     def test_last_hourglass(self):
+        self.clear_board(True)
         relic = LastHourglass(self.game)
         self.game.player_discards.append('Arkham')
-        start_size = 4
-        if self.player.role == MAGICIAN:
-            start_size = 5
-        self.assertEqual(len(self.player.hand), start_size)
+        self.assertEqual(len(self.player.hand), 0)
         relic.play(self.player)
         self.assertEqual(self.player.hand[-1], 'Arkham')
-        self.assertEqual(len(self.player.hand), start_size + 1)
+        self.assertEqual(len(self.player.hand), 1)
         self.assertRaises(IndexError, relic.play, self.player)
 
     def test_sealofleng(self):

@@ -54,7 +54,7 @@ class Action(object):
         return 1
 
     def defeat_shoggoth_cost(self):
-        if self.player.role == HUNTER and not self.defeated_shoggoth_this_turn:
+        if self.player.role == HUNTER and not self.player.defeated_shoggoth_this_turn:
             return 1
         return DEFEAT_SHOGGOTH_COST
 
@@ -195,7 +195,7 @@ class GiveClueCard(Action):
     def run(self):
         curr_loc = self.curr_loc()
         transfer = curr_loc.town.name
-        recipients = self.available()
+        recipients = self.available(remaining_actions=2)  # assume available() already checked
         if len(recipients) == 1:
             recipient = recipients[0]
         else:
@@ -210,7 +210,7 @@ class GiveClueCard(Action):
 class TakeClueCard(Action):
     name = 'Take clue card for current town'
 
-    def available(self, remaining_actions=None):
+    def available(self, remaining_actions):
         curr_loc = self.curr_loc()
         shared = []
         town = curr_loc.town.name
@@ -229,7 +229,7 @@ class TakeClueCard(Action):
     def run(self):
         curr_loc = self.curr_loc()
         transfer = curr_loc.town.name
-        candidates = self.available()
+        candidates = self.available(remaining_actions=2)
         if len(candidates) == 1:
             candidate = candidates[0]
         else:
@@ -250,7 +250,7 @@ class GiveRelic(Action):
         shared = []
         if self.player.relics:
             for player in self.game.players:
-                if player is not self and player.location == self.player.location:
+                if player is not self.player and player.location == self.player.location:
                     shared.append(player)
         return shared
 
@@ -277,7 +277,7 @@ class TakeRelic(Action):
     def available(self, remaining_actions=None):
         shared = []
         for player in self.game.players:
-            if player is not self and player.location == self.player.location and player.relics:
+            if player is not self.player and player.location == self.player.location and player.relics:
                 shared.append(player)
         return shared
 
@@ -353,6 +353,7 @@ class UseGate(Action):
                                                                                    destination.name))
         self.game.sanity_roll()
         self.player.location = destination.name
+        return 1
 
 
 class MoveCultist(Action):
@@ -412,7 +413,7 @@ class MoveShoggoth(Action):
 class Pass(Action):
     name = 'Pass'
 
-    def available(self, remaining_actions):
+    def available(self, remaining_actions=None):
         return True
 
     def run(self):

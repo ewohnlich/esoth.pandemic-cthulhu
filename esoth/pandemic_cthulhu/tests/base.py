@@ -14,6 +14,8 @@ class PandemicCthulhuTestCase(TestCase):
         self.player = self.game.players[0]
         self.player1 = self.player
         self.player2 = self.game.players[1]
+        for player in self.game.players:
+            player.role = 'Dummy'
         self.dummy_gods()
 
     def clear_board(self, hands=False):

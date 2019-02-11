@@ -66,7 +66,6 @@ class GodCase(PandemicCthulhuTestCase):
 
     def test_yigg(self):
         self.clear_board()
-        self.player.role = 'Dummy'  # no detective
         self.player.hand = ['Arkham'] * 5
         self.player.location = 'Park'
         action = SealGate(self.game, self.player)
@@ -89,8 +88,6 @@ class GodCase(PandemicCthulhuTestCase):
 
     def test_tsathaggua(self):
         start_size = 4
-        if self.player.role == MAGICIAN:
-            start_size +=1
         self.assertEqual(len(self.player.hand), start_size)
         Tsathaggua(self.game).activate()
         self.assertEqual(len(self.player.hand), start_size-2)
