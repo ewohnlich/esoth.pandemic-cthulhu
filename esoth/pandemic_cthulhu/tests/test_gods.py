@@ -87,10 +87,9 @@ class GodCase(PandemicCthulhuTestCase):
         self.assertEqual(self.game.locations['Graveyard'].cultists, 1)
 
     def test_tsathaggua(self):
-        start_size = 4
-        self.assertEqual(len(self.player.hand), start_size)
+        self.player.hand = ['Arkham'] * 4
         Tsathaggua(self.game).activate()
-        self.assertEqual(len(self.player.hand), start_size-2)
+        self.assertEqual(len(self.player.hand), 2)
 
     def test_nyarlothep(self):
         self.player.location = 'Park'

@@ -142,7 +142,7 @@ class GameBoard(object):
         add_conn('Graveyard', 'Wharf')
         add_conn('Docks', 'Woods', 'Boardwalk')
         add_conn('Boardwalk', 'Docks', 'Factory')
-        add_conn('Factory', 'Hospital', 'Pawn Shop', 'Boardwalk')
+        add_conn('Factory', 'Hospital', 'Boardwalk')
         add_conn('Hospital', 'Factory', 'Pawn Shop')
         add_conn('Pawn Shop', 'Junkyard', 'Hospital')
         add_conn('Junkyard', 'Diner', 'Pawn Shop')
@@ -266,10 +266,10 @@ class GameBoard(object):
     def reset_states(self):
         if SKIP_SUMMON in self.effects:
             self.effects.remove(SKIP_SUMMON)
-        if SKIP_SANITY_CHECKS in self.effect_tracker:
+        if SKIP_SANITY_CHECKS in self.effects:
+            self.effect_tracker[SKIP_SANITY_CHECKS] -= 1
             if self.effect_tracker[SKIP_SANITY_CHECKS] <= 0:
                 self.effects.remove(SKIP_SANITY_CHECKS)
-            self.effect_tracker[SKIP_SANITY_CHECKS] -= 1
 
     def play(self):
         self.show_board()
@@ -306,6 +306,19 @@ class GameBoard(object):
         if summon.shoggoths:
             self.move_shoggoths()
 
+    def gate_distance(self, loc, visited=None):
+        if not visited:
+            visited = []
+        if [_conn for _conn in loc.connections if _conn.gate]:
+            return 1
+        visited.append(loc)
+        paths = [self.gate_distance(_conn, visited) for _conn in loc.connections if _conn not in visited]
+        paths = [path for path in paths if path]  # dead end path is 0
+        if paths:
+            distance = 1 + min(paths)
+            return distance
+        return 0  # deadend
+
     def move_shoggoths(self, automate=False):
         """ Shoggoths move to the closest gate
 
@@ -339,7 +352,7 @@ class GameBoard(object):
                     opts = {}
                     for conn in location.connections:
                         if conn.gate:
-                            opts[1] = [conn]
+                            opts[0] = [conn]
                         else:
                             dist = gate_distance(conn)
                             opts.setdefault(dist, [])

@@ -56,17 +56,50 @@ class RelicCase(PandemicCthulhuTestCase):
         self.assertTrue(action.available())
 
     def test_wardedbox(self):
-        self.clear_board()
+        self.game.shoggoth_reserve = 999
+
+        def next_turn():
+            self.game.stream.truncate(0)
+            self.game.stream.seek(0)
+            self.game.reset_states()
+            self.clear_board()
+            for player in self.game.players:
+                player.sanity = 4
+
         self.dummy_gods()
+
+        # pre-relic
+        next_turn()
         self.game.summon_deck[0].name = self.player.location
         self.game.summon_shoggoth()
         self.assertNotIn('Active effect precludes the need for a sanity check', self.game.stream.getvalue())
+        next_turn()
+
+        # player1, play relic and summon
         relic = WardedBox(self.game)
         relic.play(self.player)
-        self.clear_board()
         self.game.summon_deck[0].name = self.player.location
         self.game.summon_shoggoth()
         self.assertIn('Active effect precludes the need for a sanity check', self.game.stream.getvalue())
+        next_turn()
+
+        # player 2, still active
+        self.game.summon_deck[0].name = self.player.location
+        self.game.summon_shoggoth()
+        self.assertIn('Active effect precludes the need for a sanity check', self.game.stream.getvalue())
+        next_turn()
+
+        # player 1, still active but ends here
+        self.game.summon_deck[0].name = self.player.location
+        self.game.summon_shoggoth()
+        self.assertIn('Active effect precludes the need for a sanity check', self.game.stream.getvalue())
+        next_turn()
+
+        # player 2, effect has now ended
+        self.game.summon_deck[0].name = self.player.location
+        self.game.summon_shoggoth()
+        self.assertNotIn('Active effect precludes the need for a sanity check', self.game.stream.getvalue())
+        next_turn()
 
     def test_xaosmirror(self):
         relic = XaosMirror(self.game)

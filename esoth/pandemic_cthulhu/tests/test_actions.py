@@ -11,9 +11,6 @@ class ActionsCase(PandemicCthulhuTestCase):
         self.assertTrue(action.available())
         self.assertEqual(self.player.location, 'Train Station')
         cost = action.run()
-        if self.player.location == 'Train Station':
-            import pdb;
-            pdb.set_trace()
         self.assertEqual(self.player.location, 'Cafe')
         self.assertEqual(cost, 1)
 
