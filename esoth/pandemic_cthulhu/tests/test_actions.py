@@ -49,12 +49,23 @@ class ActionsCase(PandemicCthulhuTestCase):
     def test_sealgate(self):
         self.clear_board(True)
         action = SealGate(self.game, self.player)
+        self.player.location = 'Park'
         self.assertFalse(action.available())
         self.player.hand = ['Arkham'] * 5
         self.assertTrue(action.available())
         cost = action.run()
         self.assertEqual(cost, 1)
         self.assertFalse(action.available())
+
+    def test_sealgate_insane(self):
+        self.clear_board(True)
+        action = SealGate(self.game, self.player)
+        self.player.location = 'Park'
+        self.player.sanity = 0
+        self.player.hand = ['Arkham'] * 5
+        action.run()
+        self.assertEqual(self.player.location, 'Hospital')
+        self.assertEqual(self.player.sanity, 4)
 
     def test_givecluecard(self):
         self.clear_board(True)

@@ -19,4 +19,9 @@ setup(name='esoth.pandemic_cthulhu',
       include_package_data=True,
       zip_safe=False,
       install_requires=[],
+      entry_points={
+          'console_scripts': [
+              'esoth-cthulhu = esoth.pandemic_cthulhu.cli:main'
+          ]
+      }
 )

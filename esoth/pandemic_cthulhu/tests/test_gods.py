@@ -1,9 +1,8 @@
+from .base import PandemicCthulhuTestCase
 from ..actions import Walk, DefeatCultist, PlayRelic, SealGate, UseGate
 from ..decks import Ithaqua, Azathoth, AtlatchNacha, ShudMell, YogSothoth, Hastor, Yigg, Dagon, \
     Tsathaggua, Nyarlothep, ShubNiggurath, ElderSign
-from ..utils import REDUCED_CULTIST_RESERVE, ACTIVE_PLAYER_ONLY, MOVEMENT_RESTRICTION, DISALLOW_GATE, MAGICIAN
-
-from .base import PandemicCthulhuTestCase
+from ..utils import REDUCED_CULTIST_RESERVE, ACTIVE_PLAYER_ONLY, DISALLOW_GATE
 
 
 class GodCase(PandemicCthulhuTestCase):

@@ -4,7 +4,6 @@ SEAL_GATE_BASE_COST = 5
 SANITY_BASE = 4
 DEFEAT_SHOGGOTH_COST = 3
 ACTIONS_BASE = 4
-AUTO_ASSIGNMENT = True  # automatically set roles if true, easier for testing
 SKIP_SUMMON = 'Skip summon'
 SKIP_SANITY_CHECKS = 'Skip sanity checks'
 REDUCE_SEAL_COST = 'Reduce seal cost by 1'

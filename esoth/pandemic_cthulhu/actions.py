@@ -29,14 +29,6 @@ class Action(object):
         """
         return 0
 
-    def can_move(self):
-        player = self.game.current_player
-        if player.role == DRIVER:
-            return True
-        elif self.game.locations[player.location].cultists >= 2 and MOVEMENT_RESTRICTION in self.game.effects:
-            return player.defeated_cultist_this_turn
-        return True
-
     def curr_loc(self):
         """ :returns game.Location object, not location name """
         return self.game.locations[self.player.location]
@@ -63,7 +55,11 @@ class Walk(Action):
     name = 'Walk to a location'
 
     def available(self, remaining_actions=None):
-        return self.can_move()
+        if self.player.role == DRIVER:
+            return True
+        elif self.game.locations[self.player.location].cultists >= 2 and MOVEMENT_RESTRICTION in self.game.effects:
+            return self.player.defeated_cultist_this_space
+        return True
 
     def run(self, double=False):
         """ Walk to a location
@@ -103,7 +99,7 @@ class Bus(Action):
             return False
         has_clue = [card for card in self.player.hand if not isinstance(card, Relic)]
         curr_loc = self.game.locations[self.player.location]
-        return curr_loc.bus_stop and has_clue and self.can_move()
+        return curr_loc.bus_stop and has_clue
 
     def run(self):
         discard = get_input([i for i in self.player.hand if isinstance(i, str)], None, 'Select a card to discard')
@@ -137,7 +133,7 @@ class DefeatCultist(Action):
             self.curr_loc().cultists -= 1
             self.game.cultist_reserve += 1
             self.game.announce('{} removes 1 cultist'.format(self.player.name()))
-        self.player.defeated_cultist_this_turn = True
+        self.player.defeated_cultist_this_space = True
         self.game.show_board()
         return 1
 
@@ -149,11 +145,12 @@ class DefeatShoggoth(Action):
         return self.curr_loc().shoggoth and remaining_actions >= self.defeat_shoggoth_cost()
 
     def run(self):
+        cost = self.defeat_shoggoth_cost()
         self.curr_loc().shoggoth -= 1
         self.game.shoggoth_reserve += 1
         self.game.draw_relic_card(self.player)
         self.player.defeated_shoggoth_this_turn = True
-        return self.defeat_shoggoth_cost()
+        return cost
 
 
 class SealGate(Action):
@@ -161,7 +158,7 @@ class SealGate(Action):
 
     def available(self, remaining_actions=None):
         seal_cost = self.game.seal_cost()
-        return self.player.hand.count(self.curr_loc().town.name) >= seal_cost
+        return self.player.hand.count(self.curr_loc().town.name) >= seal_cost and self.curr_loc().gate
 
     def run(self):
         curr_loc = self.curr_loc()
@@ -170,7 +167,12 @@ class SealGate(Action):
         for i in range(seal_cost):
             self.player.hand.remove(town.name)
             self.game.discard(town.name)
-            self.game.seal_gate(town)
+        self.game.seal_gate(town)
+        if not self.player.sanity:
+            self.player.sanity = 4
+            locs = ['Hospital', 'Church']
+            new_loc = get_input(locs, None, 'You regain your sanity and move to one of these locations')
+            self.player.location = new_loc
         return 1
 
 
@@ -334,9 +336,7 @@ class UseGate(Action):
     name = 'Use a gate'
 
     def available(self, remaining_actions=None):
-        if DISALLOW_GATE in self.game.effects:
-            return False
-        if self.can_move() and self.curr_loc().gate and not self.curr_loc().town.sealed:
+        if self.curr_loc().gate and not self.curr_loc().town.sealed and DISALLOW_GATE not in self.game.effects:
             destinations = [loc for loc in self.game.locations.values() if
                             loc is not self.curr_loc() and loc.gate and not loc.town.sealed]
             return destinations
@@ -359,13 +359,13 @@ class UseGate(Action):
 class MoveCultist(Action):
     name = 'Move cultist'
 
-    def playable(self, remaining_actions=None):
+    def available(self, remaining_actions=None):
         cultist_locations = [loc for loc in self.game.locations.values() if loc.cultists]
         if self.player.role == OCCULTIST:
             return cultist_locations
 
     def run(self):
-        locs = self.playable()
+        locs = self.available()
         start = get_input(locs, 'name', 'Where do you want to move a cultist from?')
         dest = get_input(start.connections, 'name', 'Where do you want to move it to?')
         start.cultists -= 1

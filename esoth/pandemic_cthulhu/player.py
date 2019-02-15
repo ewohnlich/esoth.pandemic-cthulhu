@@ -15,7 +15,7 @@ class Player(PandemicObject):
     game = None
 
     # once per turn trackers
-    defeated_cultist_this_turn = False
+    defeated_cultist_this_space = False
     defeated_shoggoth_this_turn = False
     played_relic_this_turn = False
     insane_hunter_paranoia = False
@@ -37,7 +37,13 @@ class Player(PandemicObject):
         """ Don't check hand limit until all cards have been dealt """
         for i in range(count):
             card = self.game.draw_player_card()
-            self.game.announce('{} drew a card: {}'.format(self.role, hasattr(card, 'name') and card.name or card))
+            if hasattr(card, 'name'):
+                if hasattr(card, 'text'):
+                    self.game.announce('{} drew a card: {}: {}'.format(self.role, card.name, card.text))
+                else:
+                    self.game.announce('{} drew a card: {}'.format(self.role, card.name))
+            else:
+                self.game.announce('{} drew a card: {}'.format(self.role, card))
             if isinstance(card, EvilStirs):
                 card.activate(self)
             else:
@@ -61,7 +67,7 @@ class Player(PandemicObject):
             self.game.discard(discard)
 
     def do_turn(self):
-        self.defeated_cultist_this_turn = False  # reset
+        # TODO sanity state may change mid turn, which effects turn limit
         self.defeated_shoggoth_this_turn = False
         self.played_relic_this_turn = False
         self.start_size = False
@@ -70,19 +76,23 @@ class Player(PandemicObject):
             num_actions += 1
         if not self.sanity:
             num_actions -= 1
-        while num_actions > 0:
+        last_location = self.location
+        while num_actions > 0 and not self.game.game_over():
             available = [action for action in build_actions(self.game, self) if action.available(num_actions)]
             action = get_input(available, 'name', 'You have {} action(s) remaining.'.format(num_actions),
                                force=True)
             cost = action.run()
             num_actions -= cost or 0
+            if self.location != last_location:
+                self.defeated_cultist_this_space = False  # reset Ithaqua effect
+            last_location = self.location
         if self.role == MAGICIAN and not self.sanity and not self.played_relic_this_turn:
             PlayRelic(self.game, self).run()
         self.game.announce('{} actions over, now drawing cards...\n'.format(self.role))
         self.deal(count=2)
         if SKIP_SUMMON not in self.game.effects:
-            self.game.draw_summon()
-            self.game.draw_summon()
+            for i in range(self.game.summoning_rate()):
+                self.game.draw_summon()
 
     @property
     def relics(self):

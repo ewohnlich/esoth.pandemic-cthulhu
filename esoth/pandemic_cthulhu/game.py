@@ -4,8 +4,8 @@ from random import shuffle, choice
 
 from .decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, RoleManager
 from .player import Player
-from .printer import print_player_hands, print_elder_map
-from .utils import PandemicObject, get_input, AUTO_ASSIGNMENT, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
+from .printer import print_elder_map
+from .utils import PandemicObject, get_input, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
     REDUCE_SEAL_COST, INCREASE_SEAL_COST, DETECTIVE, MAGICIAN
 
 
@@ -27,7 +27,7 @@ class GameBoard(object):
     current_player = None
     stream = sys.stdout
 
-    def __init__(self, num_players=False, stream=None):
+    def __init__(self, num_players=False, stream=None, auto=False):
         self.player_deck = []
         self.player_discards = []
         self.summon_deck = deque([])
@@ -53,7 +53,7 @@ class GameBoard(object):
         rm = RoleManager()
         while num_players:
             player = Player(self)
-            rm.assign_role(player, AUTO_ASSIGNMENT)
+            rm.assign_role(player, auto)
             self.players.append(player)
             num_players -= 1
         self.current_player = self.players[0]
@@ -176,7 +176,7 @@ class GameBoard(object):
             Shuffle each subset
             Concatenate subsets
         """
-        decks = [[]] * 4
+        decks = [[], [], [], []]
         curr_deck = 0
         while self.player_deck:
             draw = self.player_deck.pop()
@@ -231,7 +231,6 @@ class GameBoard(object):
             self.awakening_ritual()
         else:
             self.locations[location].cultists += 1
-            self.announce('{} now has {} cultist(s)'.format(location, self.locations[location].cultists))
 
     def sanity_roll(self, player=None):
         if SKIP_SANITY_CHECKS in self.effects:
@@ -271,23 +270,21 @@ class GameBoard(object):
             if self.effect_tracker[SKIP_SANITY_CHECKS] <= 0:
                 self.effects.remove(SKIP_SANITY_CHECKS)
 
+    def summoning_rate(self):
+        if len([god for god in self.old_gods if god.revealed]) > 3:
+            return 3
+        return 2
+
     def play(self):
         self.show_board()
         turn = 0
-        while not self.have_lost() and not self.have_won():
+        while not self.game_over():
             self.current_player = self.players[turn % len(self.players)]
-            print_player_hands(self)
             self.announce('It is now {}\'s turn (turn {})'.format(self.current_player.name(), turn + 1))
             self.current_player.do_turn()
             self.reset_states()
             self.show_board()
             turn += 1
-        condition = self.have_lost()
-        if condition:
-            condition = 'You have lost: {}'.format(condition)
-        else:
-            condition = 'You have won!'
-        self.announce('The game is over. {}'.format(condition))
 
     def discard(self, card):
         self.player_discards.append(card)
@@ -303,13 +300,14 @@ class GameBoard(object):
         self.summon_discards.append(summon)
         self.announce('Summon deck draw: {}'.format(summon.name))
         self.add_cultist(summon.name)
+        self.cultist_reserve -= 1
         if summon.shoggoths:
             self.move_shoggoths()
 
     def gate_distance(self, loc, visited=None):
         if not visited:
             visited = []
-        if [_conn for _conn in loc.connections if _conn.gate]:
+        if [_conn for _conn in loc.connections if _conn.gate and not _conn.town.sealed]:
             return 1
         visited.append(loc)
         paths = [self.gate_distance(_conn, visited) for _conn in loc.connections if _conn not in visited]
@@ -394,6 +392,7 @@ class GameBoard(object):
         if self.locations[player.location].shoggoth:
             self.announce('You\'ve entered a location with a shoggoth. Performing a sanity roll...')
             self.sanity_roll()
+        self.show_board()
 
     def get_shoggoth_sites(self):
         locs = []
@@ -425,21 +424,27 @@ class GameBoard(object):
         self.summon_deck += discards
         self.summon_discards = []
 
-    def have_won(self):
+    def game_over(self):
         sealed = [town for town in self.towns if town.sealed]
-        return len(sealed) == 4
+        if len(sealed) == 4:
+            self.announce('The game is over. You have won!')
+            return True
 
-    def have_lost(self):
+        loss_condition = None
         if self.cultist_reserve < 0:
-            return 'Not enough cultists in reserve.'
+            loss_condition = 'Not enough cultists in reserve.'
         if self.shoggoth_reserve < 0:
-            return 'Not enough shoggoths in reserve.'
+            loss_condition = 'Not enough shoggoths in reserve.'
         if self.old_gods[-1].revealed:
-            return self.old_gods[-1].text
-        if not any([player.sanity for player in self.players]):
-            return 'All players are insane.'
+            loss_condition = self.old_gods[-1].text
+        if not any([player.sanity for player in self.players if player.sanity > 0]):
+            loss_condition = 'All players are insane.'
         if not self.player_deck:
-            return 'Player deck has been depleted.'
+            loss_condition = 'Player deck has been depleted.'
+
+        if loss_condition:
+            self.announce('You have lost: {}'.format(loss_condition))
+            return True
 
 
 class Town(PandemicObject):

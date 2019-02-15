@@ -1,6 +1,6 @@
 def print_player_hands(game):
     for player in game.players:
-        print('Hand for {}: -- {} cards -- {}'.format(player.name(), len(player.hand),
+        print('{}: {} sanity -- {} cards: {}'.format(player.name(), player.sanity, len(player.hand),
                                                       ', '.join(sorted(map(str, player.hand), ))), file=game.stream)
 
 
@@ -53,3 +53,4 @@ def print_elder_map(game):
     towns = sorted(game.towns, key=lambda x: town_order.index(x.name))  # when printing map, Innsmouth comes first
     elder_map = elder_map.format(*[town.elder_sign and 'E' or town.sealed and 'X' or ' ' for town in towns])
     print(elder_map, file=game.stream)
+    print_player_hands(game)
