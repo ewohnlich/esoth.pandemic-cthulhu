@@ -1,1 +1,0 @@
-This project is for research purposes only, to try to recreate the game in python
