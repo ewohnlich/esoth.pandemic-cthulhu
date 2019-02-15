@@ -213,7 +213,7 @@ class GameBoard(object):
     def draw_relic_card(self, player):
         if self.relic_deck:
             relic = self.relic_deck.pop()
-            self.announce('{} draws a relic card. {}: {}'.format(self.current_player.name(), relic.name, relic.text))
+            self.announce('{} draws a relic card. {}: {}'.format(player.name(), relic.name, relic.text))
             player.hand.append(relic)
             player.limit_hand()
 
