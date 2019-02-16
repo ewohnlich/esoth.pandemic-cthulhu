@@ -89,6 +89,7 @@ class ShudMell(OldGod):
             player.sanity -= 1
             player.sanity = max(0, player.sanity)
             pool -= 1
+            sane_players = [player for player in self.game.players if player.sanity]
         if pool and not sane_players:
             self.game.announce('No more players can afford to lose a sanity point')
 
