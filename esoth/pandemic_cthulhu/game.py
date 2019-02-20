@@ -5,7 +5,7 @@ from random import shuffle, choice
 from .decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilStirs, RoleManager
 from .player import Player
 from .printer import print_elder_map
-from .utils import PandemicObject, get_input, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
+from .utils import PandemicObject, get_input, confirm, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
     REDUCE_SEAL_COST, INCREASE_SEAL_COST, DETECTIVE, MAGICIAN
 
 
@@ -283,6 +283,7 @@ class GameBoard(object):
             self.announce('It is now {}\'s turn (turn {})'.format(self.current_player.name(), turn + 1))
             self.current_player.do_turn()
             self.reset_states()
+            confirm('End of turn.')
             self.show_board()
             turn += 1
 

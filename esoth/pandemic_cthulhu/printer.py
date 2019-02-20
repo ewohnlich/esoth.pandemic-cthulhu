@@ -54,3 +54,32 @@ def print_elder_map(game):
     elder_map = elder_map.format(*[town.elder_sign and 'E' or town.sealed and 'X' or ' ' for town in towns])
     print(elder_map, file=game.stream)
     print_player_hands(game)
+
+
+RULES = """ Win condition: seal all four gates
+Loss condition: No cultists left in reserves when needed, no shoggoth left in reserves when needed, player draw deck is
+empty when needed, all players are insane, or Cthulhu has been summoned.
+
+Player turn:
+1. Perform actions (4 is default, but changes based on sanity and some roles)
+2. Draw two cards which are either Town Clue cards, a Relic (special bonuses), or Evil Stirs (bad things!)
+3. Draw summon cards at the current summoning rate (2 for first half of old gods, 3 for second half)
+
+Actions:
+* Walk to a location
+* Take the bus - at bus stops, discard current town card to go anywhere. Or another town card to go somewhere in that town
+* Use gate - use gate to go to another gate
+* Trade town clue cards or relic cards with a player in the same location. For clue cards, must be the current town
+* Seal gate - default requirement of 5 of the current town clue cards
+* Use relic
+* Defeat cultist
+* Defeat shoggoth (requires 3 actions)
+
+Sanity Roll:
+On a sanity roll you might lose 1 sanity, 2 sanity, or summon 2 cultists. This action is performed when entering a
+location with a shoggoth or a shoggoth enters your location, when using a Relic card, during an Evil Stirs draw, or
+some other special events
+"""
+
+def print_rules():
+    print(RULES)

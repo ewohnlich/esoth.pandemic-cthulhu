@@ -88,3 +88,10 @@ def get_input(options, attr, prompt, force=False):
         except IndexError:
             print('Not a valid option')
     return selection
+
+
+def confirm(pre=''):
+    if pre:
+        input(pre + ' Hit any key to continue')
+    else:
+        input('Hit any key to continue')

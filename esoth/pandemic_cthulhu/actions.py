@@ -1,6 +1,7 @@
 from .decks import Relic
 from .utils import get_input, MOVEMENT_RESTRICTION, DEFEAT_SHOGGOTH_COST, DISALLOW_GATE, ACTIVE_PLAYER_ONLY, \
     DETECTIVE, MAGICIAN, DRIVER, OCCULTIST, HUNTER, REPORTER
+from .printer import print_rules
 
 
 class Action(object):
@@ -420,6 +421,17 @@ class Pass(Action):
         return 1
 
 
+class PrintRules(Action):
+    name = 'Print Rules'
+
+    def available(self, remaining_actions=None):
+        return True
+
+    def run(self):
+        print_rules()
+        return 0
+
+
 def build_actions(game, player):
     # can't use inspect because it does not keep order
     return [
@@ -435,4 +447,5 @@ def build_actions(game, player):
         TakeRelic(game, player),
         PlayRelic(game, player),
         Pass(game, player),
+        PrintRules(game, player)
     ]
