@@ -40,6 +40,8 @@ class GameBoard(object):
         self.locations = {}
         self.towns = []
         self.old_gods = get_old_gods(self)
+        self.num_players = num_players
+        self.auto = auto
 
         if stream:
             self.stream = stream
@@ -49,20 +51,6 @@ class GameBoard(object):
             while num_players not in ['2', '3', '4']:
                 num_players = input('Invalid number. Number of players [2/3/4]:')
             num_players = int(num_players)
-
-        rm = RoleManager()
-        while num_players:
-            player = Player(self)
-            rm.assign_role(player, auto)
-            self.players.append(player)
-            num_players -= 1
-        self.current_player = self.players[0]
-        self.player_deck, self.relic_deck = get_player_relic_decks(self, num_players)
-        self.summon_deck = get_summon_deck()
-        self._setup_locations()
-        self._setup_cultists()
-        self._deal_players()
-        self._initialize_evil()
 
     def announce(self, msg):
         """ The game is only text based now so it just prints to stdout
@@ -276,6 +264,20 @@ class GameBoard(object):
         return 2
 
     def play(self):
+        rm = RoleManager()
+        while self.num_players:
+            player = Player(self)
+            rm.assign_role(player, self.auto)
+            self.players.append(player)
+            self.num_players -= 1
+        self.current_player = self.players[0]
+        self.player_deck, self.relic_deck = get_player_relic_decks(self, self.num_players)
+        self.summon_deck = get_summon_deck()
+        self._setup_locations()
+        self._setup_cultists()
+        self._deal_players()
+        self._initialize_evil()
+
         self.show_board()
         turn = 0
         while not self.game_over():
