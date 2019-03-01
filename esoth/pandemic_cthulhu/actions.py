@@ -447,7 +447,7 @@ def build_actions(game, player):
         TakeRelic(game, player),
         PlayRelic(game, player),
         MoveCultist(game, player),
-        DefeatCultist(game, player),
+        MoveShoggoth(game, player),
         Pass(game, player),
         PrintRules(game, player)
     ]
