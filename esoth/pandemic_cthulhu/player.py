@@ -77,7 +77,7 @@ class Player(PandemicObject):
         if not self.sanity:
             num_actions -= 1
         last_location = self.location
-        while num_actions > 0 and not self.game.game_over():
+        while num_actions > 0:
             available = [action for action in build_actions(self.game, self) if action.available(num_actions)]
             action = get_input(available, 'name', 'You have {} action(s) remaining.'.format(num_actions),
                                force=True)
@@ -86,6 +86,8 @@ class Player(PandemicObject):
             if self.location != last_location:
                 self.defeated_cultist_this_space = False  # reset Ithaqua effect
             last_location = self.location
+            if self.game.game_over():
+                return
         if self.role == MAGICIAN and not self.sanity and not self.played_relic_this_turn:
             self.game.announce('As the magician with a relic and no sanity, you must play a relic')
             PlayRelic(self.game, self).run()
