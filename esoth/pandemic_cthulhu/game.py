@@ -345,7 +345,7 @@ class GameBoard(object):
         for location in self.get_shoggoth_sites():
             if location.shoggoth:
                 location.shoggoth -= 1
-                if location.gate:
+                if location.gate and not location.town.sealed:
                     self.announce(
                         'The Shoggoth at {} enters the gate, triggering an awakening ritual'.format(location.name))
                     awaken += 1
