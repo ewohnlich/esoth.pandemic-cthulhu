@@ -11,6 +11,7 @@ class PandemicCthulhuTestCase(TestCase):
     def setUp(self):
         os.environ[AUTOMATE_INPUT] = 'true'
         self.game = GameBoard(num_players=2, stream=StringIO())
+        self.game._setup()
         self.player = self.game.players[0]
         self.player1 = self.player
         self.player2 = self.game.players[1]

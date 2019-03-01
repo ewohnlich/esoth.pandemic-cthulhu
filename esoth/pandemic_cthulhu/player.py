@@ -87,6 +87,7 @@ class Player(PandemicObject):
                 self.defeated_cultist_this_space = False  # reset Ithaqua effect
             last_location = self.location
         if self.role == MAGICIAN and not self.sanity and not self.played_relic_this_turn:
+            self.game.announce('As the magician with a relic and no sanity, you must play a relic')
             PlayRelic(self.game, self).run()
         self.game.announce('{} actions over, now drawing cards...\n'.format(self.role))
         self.deal(count=2)

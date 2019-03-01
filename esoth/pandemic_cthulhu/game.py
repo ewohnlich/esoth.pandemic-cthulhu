@@ -177,6 +177,21 @@ class GameBoard(object):
             shuffle(deck)
             self.player_deck += deck
 
+    def _setup(self):
+        rm = RoleManager()
+        while self.num_players:
+            player = Player(self)
+            rm.assign_role(player, self.auto)
+            self.players.append(player)
+            self.num_players -= 1
+        self.current_player = self.players[0]
+        self.player_deck, self.relic_deck = get_player_relic_decks(self, self.num_players)
+        self.summon_deck = get_summon_deck()
+        self._setup_locations()
+        self._setup_cultists()
+        self._deal_players()
+        self._initialize_evil()
+
     def seal_cost(self):
         cost = sum([
             SEAL_GATE_BASE_COST,
@@ -265,19 +280,7 @@ class GameBoard(object):
         return 2
 
     def play(self):
-        rm = RoleManager()
-        while self.num_players:
-            player = Player(self)
-            rm.assign_role(player, self.auto)
-            self.players.append(player)
-            self.num_players -= 1
-        self.current_player = self.players[0]
-        self.player_deck, self.relic_deck = get_player_relic_decks(self, self.num_players)
-        self.summon_deck = get_summon_deck()
-        self._setup_locations()
-        self._setup_cultists()
-        self._deal_players()
-        self._initialize_evil()
+        self._setup()
 
         self.show_board()
         turn = 0
