@@ -206,7 +206,6 @@ class AlienCarving(Relic):
 
     def play(self, player):
         super(AlienCarving, self).play(player)
-        self.game.sanity_roll(player)
         return -3
 
 

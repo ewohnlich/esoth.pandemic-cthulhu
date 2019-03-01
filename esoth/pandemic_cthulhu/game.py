@@ -51,6 +51,7 @@ class GameBoard(object):
             while num_players not in ['2', '3', '4']:
                 num_players = input('Invalid number. Number of players [2/3/4]:')
             num_players = int(num_players)
+        self.num_players = num_players
 
     def announce(self, msg):
         """ The game is only text based now so it just prints to stdout
