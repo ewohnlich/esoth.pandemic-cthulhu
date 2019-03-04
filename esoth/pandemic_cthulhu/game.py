@@ -195,7 +195,6 @@ class GameBoard(object):
     def seal_cost(self):
         cost = sum([
             SEAL_GATE_BASE_COST,
-            int(INCREASE_SEAL_COST in self.effects),
             -1 * int(REDUCE_SEAL_COST in self.effects),
         ])
         if self.current_player.role == DETECTIVE:

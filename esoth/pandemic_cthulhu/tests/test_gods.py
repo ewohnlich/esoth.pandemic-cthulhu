@@ -71,10 +71,12 @@ class GodCase(PandemicCthulhuTestCase):
         self.assertTrue(action.available())
         Yigg(self.game).activate()
         self.assertFalse(action.available())
-        self.player.hand.append('Arkham')
+        self.player.hand.append('Kingsmouth')
+        self.assertFalse(action.available())
+        self.player.hand.append('Dunwich')
         self.assertTrue(action.available())
         action.run()
-        self.assertEqual(len(self.player.hand), 0)
+        self.assertEqual(len(self.player.hand), 1)
 
     def test_dagon(self):
         self.clear_board()

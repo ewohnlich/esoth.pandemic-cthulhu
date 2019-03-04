@@ -1,6 +1,6 @@
 from .decks import Relic
 from .utils import get_input, MOVEMENT_RESTRICTION, DEFEAT_SHOGGOTH_COST, DISALLOW_GATE, ACTIVE_PLAYER_ONLY, \
-    DETECTIVE, MAGICIAN, DRIVER, OCCULTIST, HUNTER, REPORTER
+    DETECTIVE, MAGICIAN, DRIVER, OCCULTIST, HUNTER, REPORTER, INCREASE_SEAL_COST
 from .printer import print_rules
 
 
@@ -159,7 +159,14 @@ class SealGate(Action):
 
     def available(self, remaining_actions=None):
         seal_cost = self.game.seal_cost()
-        return self.player.hand.count(self.curr_loc().town.name) >= seal_cost and self.curr_loc().gate
+        base_cost = self.player.hand.count(self.curr_loc().town.name) >= seal_cost and self.curr_loc().gate
+        if INCREASE_SEAL_COST in self.game.effects and base_cost:
+            connected_towns = [town.name for town in self.curr_loc().town.connections]
+            for c_town in connected_towns:
+                if c_town in self.player.hand:
+                    return True
+        else:
+            return base_cost
 
     def run(self):
         curr_loc = self.curr_loc()
@@ -168,6 +175,15 @@ class SealGate(Action):
         for i in range(seal_cost):
             self.player.hand.remove(town.name)
             self.game.discard(town.name)
+        if INCREASE_SEAL_COST in self.game.effects:
+            connected_towns = self.curr_loc().town.connections
+            connected_cards = []
+            for ctown in connected_towns:
+                if ctown.name in self.player.hand:
+                    connected_cards.append(ctown)
+            c_town = get_input([ctown for ctown in connected_towns if ctown.name in self.player.hand], 'name',
+                               'Active effect requires a card from a connected town')
+            self.player.hand.remove(c_town.name)
         self.game.seal_gate(town)
         if not self.player.sanity:
             self.player.sanity = 4
