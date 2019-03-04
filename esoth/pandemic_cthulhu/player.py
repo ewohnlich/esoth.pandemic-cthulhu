@@ -65,6 +65,9 @@ class Player(PandemicObject):
                                 '{} is over the hand limit. Enter a number to discard'.format(self.name()))
             self.hand.remove(discard)
             self.game.discard(discard)
+            if isinstance(discard, Relic):
+                if discard.playable():
+                    discard.play(self)
 
     def do_turn(self):
         # TODO sanity state may change mid turn, which effects turn limit
