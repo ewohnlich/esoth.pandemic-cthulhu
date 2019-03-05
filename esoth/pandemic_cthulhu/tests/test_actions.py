@@ -1,7 +1,8 @@
 from .base import PandemicCthulhuTestCase
 from ..actions import Walk, Bus, DefeatCultist, DefeatShoggoth, GiveClueCard, GiveRelic, TakeRelic, TakeClueCard, \
-    Pass, SealGate, UseGate
+    Pass, SealGate, UseGate, MoveShoggoth, MoveCultist
 from ..decks import Relic
+from ..utils import OCCULTIST
 
 
 class ActionsCase(PandemicCthulhuTestCase):
@@ -45,6 +46,17 @@ class ActionsCase(PandemicCthulhuTestCase):
         cost = action.run()
         self.assertEqual(cost, 3)
         self.assertFalse(action.available(4))
+
+    def test_moveshoggoth(self):
+        self.clear_board()
+        self.player.role = OCCULTIST
+        action = MoveShoggoth(self.game, self.player)
+        self.assertFalse(action.available(2))
+        self.game.locations['Police Station'].shoggoth = 1
+        self.assertTrue(action.available(2))
+        self.assertFalse(action.available(1))
+        cost = action.run()
+        self.assertEqual(cost, 2)
 
     def test_sealgate(self):
         self.clear_board(True)

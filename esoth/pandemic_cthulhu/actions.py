@@ -407,13 +407,13 @@ class MoveCultist(Action):
 class MoveShoggoth(Action):
     name = 'Move shoggoth'
 
-    def playable(self, remaining_actions):
+    def available(self, remaining_actions):
         shoggo = [loc for loc in self.game.locations.values() if loc.shoggoth]
         if self.player.role == OCCULTIST and self.player.sanity and remaining_actions >= 2:
             return shoggo
 
     def run(self):
-        start = get_input(self.playable(2), 'name', 'Where do you want to move a shoggoth from?')
+        start = get_input(self.available(2), 'name', 'Where do you want to move a shoggoth from?')
         dest = get_input(start.connections, 'name', 'Where do you want to move it to?')
         start.shoggoth -= 1
         dest.shoggoth += 1
