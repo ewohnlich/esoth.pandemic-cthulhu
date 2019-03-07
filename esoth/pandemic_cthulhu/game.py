@@ -322,7 +322,7 @@ class GameBoard(object):
         if paths:
             distance = 1 + min(paths)
             return distance
-        return 0  # deadend
+        return 999  # deadend
 
     def move_shoggoths(self, automate=False):
         """ Shoggoths move to the closest gate
@@ -330,19 +330,6 @@ class GameBoard(object):
             Special cases: 1. If two or more options are equidistant from a gate, player chooses
                             2. If shoggoth is on a gate, trigger an awakening ritual
         """
-
-        def gate_distance(loc, visited=None):
-            if not visited:
-                visited = []
-            if [_conn for _conn in loc.connections if _conn.gate and not _conn.town.sealed]:
-                return 1
-            visited.append(loc)
-            paths = [gate_distance(_conn, visited) for _conn in loc.connections if _conn not in visited]
-            paths = [path for path in paths if path]  # dead end path is 0
-            if paths:
-                distance = 1 + min(paths)
-                return distance
-            return 0  # deadend
 
         awaken = 0  # delay until current shoggoths move, in case one activates Hastor
         for location in self.get_shoggoth_sites():
@@ -359,7 +346,7 @@ class GameBoard(object):
                         if conn.gate and not conn.town.sealed:
                             opts[0] = [conn]
                         else:
-                            dist = gate_distance(conn)
+                            dist = self.gate_distance(conn)
                             opts.setdefault(dist, [])
                             opts[dist].append(conn)
 
