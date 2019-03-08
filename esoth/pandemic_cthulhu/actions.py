@@ -368,8 +368,8 @@ class UseGate(Action):
             '{} takes the gate from {} to {}. This requires a sanity roll.'.format(self.player.name(),
                                                                                    self.player.location,
                                                                                    destination.name))
-        self.game.sanity_roll()
         self.player.location = destination.name
+        self.game.sanity_roll()
         return 1
 
 
