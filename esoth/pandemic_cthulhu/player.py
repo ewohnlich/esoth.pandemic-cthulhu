@@ -91,7 +91,7 @@ class Player(PandemicObject):
             last_location = self.location
             if self.game.game_over():
                 return
-        if self.role == MAGICIAN and not self.sanity and not self.played_relic_this_turn:
+        if self.role == MAGICIAN and self.relics and not self.sanity and not self.played_relic_this_turn:
             self.game.announce('As the magician with a relic and no sanity, you must play a relic')
             PlayRelic(self.game, self).run()
         self.game.announce('{} actions over, now drawing cards...\n'.format(self.role))

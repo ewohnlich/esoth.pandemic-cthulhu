@@ -224,9 +224,9 @@ class GameBoard(object):
         if self.player_deck:
             return self.player_deck.pop()
 
-    def add_cultist(self, location):
+    def add_cultist(self, location, respect_elder=True):
         town = self.locations[location].town
-        if town.elder_sign:
+        if town.elder_sign and respect_elder:
             self.announce('An elder sign prevents a cultist from being added to {}'.format(location))
         elif self.locations[location].cultists == 3:
             # awaken ritual

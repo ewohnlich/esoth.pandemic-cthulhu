@@ -96,13 +96,24 @@ class Bus(Action):
     name = 'Take the bus'
 
     def available(self, remaining_actions=None):
+        curr_loc = self.game.locations[self.player.location]
         if self.player.role == REPORTER and not self.player.sanity:
             return False
+        if self.player.role == REPORTER and self.player.sanity and curr_loc.bus_stop:
+            return True
         has_clue = [card for card in self.player.hand if not isinstance(card, Relic)]
-        curr_loc = self.game.locations[self.player.location]
         return curr_loc.bus_stop and has_clue
 
     def run(self):
+        curr_loc = self.game.locations[self.player.location]
+        if self.player.role == REPORTER and curr_loc.bus_stop:
+            choices = ['Another bus stop', 'Use card']
+            choice = get_input(choices, None, 'As a reporter you can go to another bus stop at no cost, or discard a card')
+            if choice == choices[0]:
+                stops = [loc for loc in self.game.locations.values() if loc.bus_stop and loc is not curr_loc]
+                stop = get_input(stops, 'name', 'Choose another bus stop location')
+                self.game.move_player(stop.name)
+                return 1
         discard = get_input([i for i in self.player.hand if isinstance(i, str)], None, 'Select a card to discard')
         self.player.hand.remove(discard)
         self.game.discard(discard)
@@ -382,25 +393,26 @@ class MoveCultist(Action):
             return cultist_locations
 
     def run(self):
+
         locs = self.available()
         start = get_input(locs, 'name', 'Where do you want to move a cultist from?')
         dest = get_input(start.connections, 'name', 'Where do you want to move it to?')
         start.cultists -= 1
-        self.game.add_cultist(dest.name)
+        self.game.add_cultist(dest.name, respect_elder=False)
 
         if self.player.sanity:
             second_move = get_input(['Yes', 'No'], None, 'Do you want to move this cultist again for free?')
             if second_move == 'Yes':
                 dest2 = get_input(dest.connections, 'name', 'Where do you want to move it to?')
                 dest.cultists -= 1
-                self.game.add_cultist(dest2.name)
+                self.game.add_cultist(dest2.name, respect_elder=False)
         else:
             second_move = get_input(['Yes', 'No'], None, 'Do you want to move another cultist?')
             if second_move == 'Yes':
                 start = get_input(locs, 'name', 'Where do you want to move a cultist from?')
                 dest = get_input(start.connections, 'name', 'Where do you want to move it to?')
                 start.cultists -= 1
-                self.game.add_cultist(dest.name)
+                self.game.add_cultist(dest.name, respect_elder=False)
         return 1
 
 
