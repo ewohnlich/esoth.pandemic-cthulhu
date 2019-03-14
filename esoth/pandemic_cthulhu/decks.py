@@ -483,6 +483,8 @@ class EvilStirs(PandemicCard):
 
         # 2. Awakening
         self.game.awakening_ritual()
+        if self.game.old_gods[-1].revealed:
+            return
 
         # 3. A Shoggoth appears
         self.game.summon_shoggoth()

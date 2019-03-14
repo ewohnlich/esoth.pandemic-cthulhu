@@ -263,7 +263,8 @@ class GameBoard(object):
             if not god.revealed:
                 god.revealed = True
                 god.activate()
-                confirm()
+                if god.name != 'Cthulhu':
+                    confirm()
                 break
 
     def reset_states(self):
@@ -331,6 +332,7 @@ class GameBoard(object):
         """
 
         awaken = 0  # delay until current shoggoths move, in case one activates Hastor
+        # TODO - test that this works with multiple shoggoths on one location
         for location in self.get_shoggoth_sites():
             if location.shoggoth:
                 location.shoggoth -= 1
@@ -390,8 +392,10 @@ class GameBoard(object):
     def get_shoggoth_sites(self):
         locs = []
         for location in self.locations.values():
-            if location.shoggoth:
-                locs.append(location)
+            # if multiple shoggoths, add the location for each
+            sites = [location] * location.shoggoth
+            if sites:
+                locs += sites
         return locs
 
     def summon_shoggoth(self):

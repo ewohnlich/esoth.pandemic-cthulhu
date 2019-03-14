@@ -46,6 +46,8 @@ class Player(PandemicObject):
                 self.game.announce('{} drew a card: {}'.format(self.role, card))
             if isinstance(card, EvilStirs):
                 card.activate(self)
+                if card.name == 'Cthulhu':
+                    return
             else:
                 self.hand.append(card)
                 self.hand = sorted(self.hand)
@@ -96,6 +98,8 @@ class Player(PandemicObject):
             PlayRelic(self.game, self).run()
         self.game.announce('{} actions over, now drawing cards...\n'.format(self.role))
         self.deal(count=2)
+        if self.game.game_over():  # Evil Stirs could have ended the game
+            return
         if SKIP_SUMMON not in self.game.effects:
             for i in range(self.game.summoning_rate()):
                 self.game.draw_summon()
