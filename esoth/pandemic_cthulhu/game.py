@@ -26,6 +26,8 @@ class GameBoard(object):
     towns = None
     current_player = None
     stream = sys.stdout
+    lose_condition = False
+    win_condition = True
 
     def __init__(self, num_players=False, stream=None, auto=False):
         self.player_deck = []
@@ -152,7 +154,7 @@ class GameBoard(object):
 
     def _deal_players(self):
         for player in self.players:
-            start = 4
+            start = 6 - len(self.players)
             while start:
                 player.deal()
                 start -= 1
@@ -428,6 +430,8 @@ class GameBoard(object):
             return True
 
         loss_condition = None
+        # TODO - this really isn't a problem unless they need to use a cultist/draw/shogg. We should just have an
+        # attribute that the things using this can check
         if self.cultist_reserve < 0:
             loss_condition = 'Not enough cultists in reserve.'
         if self.shoggoth_reserve < 0:

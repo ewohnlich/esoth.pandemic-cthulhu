@@ -347,6 +347,8 @@ class SealOfLeng(Relic):
         super(SealOfLeng, self).play(player)
         god = get_input(self.playable(), 'name', 'Select an old god with an active effect')
         god.name = 'SEAL OF LENG'
+        if god.effect == REDUCED_CULTIST_RESERVE:
+            self.game.cultist_reserve += 3
         self.game.effects.remove(god.effect)
 
 

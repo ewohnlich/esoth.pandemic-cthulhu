@@ -47,7 +47,7 @@ def print_elder_map(game):
 
     elder_map = elder_map.format(gods, len(game.player_deck), len(game.player_discards), len(game.relic_deck),
                                  len(game.summon_discards), game.cultist_reserve, game.shoggoth_reserve, *details,
-                                 ','.join(game.effects))
+                                 ', '.join(game.effects))
     elder_map = elder_map.replace('(G)', '({})')
     town_order = ('Innsmouth', 'Arkham', 'Dunwich', 'Kingsport')
     towns = sorted(game.towns, key=lambda x: town_order.index(x.name))  # when printing map, Innsmouth comes first

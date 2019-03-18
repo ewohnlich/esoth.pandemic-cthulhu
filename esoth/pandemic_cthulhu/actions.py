@@ -77,12 +77,15 @@ class Walk(Action):
             new_loc = get_input(conns, 'name', 'Where would you like to move?')
         self.game.move_player(new_loc.name)
 
-        if self.player.role == HUNTER and not self.player.sanity and not self.player.insane_hunter_paranoia and new_loc.cultists:
+        if self.player.role == HUNTER and not self.player.sanity and not \
+                self.player.insane_hunter_paranoia and new_loc.cultists:
             self.player.insane_hunter_roll()
             self.player.insane_hunter_paranoia = True
 
         if not double:
-            if self.player.role == DRIVER:
+            # no extra move if movement restriction in effect
+            if self.player.role == DRIVER and not (self.game.locations[self.player.location].cultists >= 2 and
+                                                   MOVEMENT_RESTRICTION in self.game.effects):
                 second_move = True
                 if self.player.sanity:
                     second_move = get_input(['Yes', 'No'], None, 'Do you want to move again for free?')
@@ -108,7 +111,8 @@ class Bus(Action):
         curr_loc = self.game.locations[self.player.location]
         if self.player.role == REPORTER and curr_loc.bus_stop:
             choices = ['Another bus stop', 'Use card']
-            choice = get_input(choices, None, 'As a reporter you can go to another bus stop at no cost, or discard a card')
+            choice = get_input(choices, None,
+                               'As a reporter you can go to another bus stop at no cost, or discard a card')
             if choice == choices[0]:
                 stops = [loc for loc in self.game.locations.values() if loc.bus_stop and loc is not curr_loc]
                 stop = get_input(stops, 'name', 'Choose another bus stop location')
