@@ -401,6 +401,8 @@ class GameBoard(object):
         return locs
 
     def summon_shoggoth(self):
+        if not self.summon_deck:
+            self.regroup_cultists()
         summon = self.summon_deck.popleft()
         town = self.locations[summon.name].town
         if town.elder_sign:
