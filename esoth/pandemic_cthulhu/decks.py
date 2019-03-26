@@ -142,7 +142,6 @@ class Tsathaggua(OldGod):
             discard = get_input(player.hand, None, 'Pick a card to discard')
             player.hand.remove(discard)
             self.game.discard(discard)
-            player.sanity -= 1
             pool -= 1
 
 
@@ -214,8 +213,8 @@ class BizarreStatue(Relic):
     text = 'Skip the next Summoning step. [Do not flip over any Summoning cards.]'
 
     def play(self, player):
-        super(BizarreStatue, self).play(player)
         self.game.effects.append(SKIP_SUMMON)
+        super(BizarreStatue, self).play(player)
         return 0
 
 
@@ -225,8 +224,8 @@ class MiGoEye(Relic):
            'discard it when the next gate is sealed'
 
     def play(self, player):
-        super(MiGoEye, self).play(player)
         self.game.effects.append(REDUCE_SEAL_COST)
+        super(MiGoEye, self).play(player)
         return 0
 
 
@@ -245,8 +244,12 @@ class XaosMirror(Relic):
     text = 'You can swap one Clue card from your hand with a Clue card in another player\'s hand regardless of where ' \
            'either of you are'
 
+    def playable(self):
+        players = [p for p in self.game.players if p.hand]
+        return len(players) >= 2  # at least two people have cards
+
+
     def play(self, player):
-        super(XaosMirror, self).play(player)
         teammate = get_input([p for p in self.game.players if p is not player], 'name', 'Who do you want to swap with?')
         curr_discard = get_input([card for card in player.hand if card != self], None, 'Which card are you swapping?')
         their_discard = get_input([card for card in teammate.hand if card != self], None,
@@ -255,6 +258,7 @@ class XaosMirror(Relic):
         player.hand.remove(curr_discard)
         teammate.hand.append(curr_discard)
         teammate.hand.remove(their_discard)
+        super(XaosMirror, self).play(player)
         return 0
 
 
@@ -263,11 +267,11 @@ class SilverKey(Relic):
     text = 'The active player can instantly move to any location on the board'
 
     def play(self, player):
-        super(SilverKey, self).play(player)
         town = get_input(self.game.towns, 'name', 'You can move anywhere. First, select a town')
         destination = get_input([l for l in town.locations], 'name',
                                 'Select a location within {}'.format(town.name))
         self.game.move_player(destination.name)
+        super(SilverKey, self).play(player)
         return 0
 
 
@@ -298,9 +302,9 @@ class ElderSign(Relic):
         return [town for town in self.game.towns if town.sealed]
 
     def play(self, player):
-        super(ElderSign, self).play(player)
         town = get_input(self.playable(), 'name', 'Which town will you seal?')
         town.elder_sign = True
+        super(ElderSign, self).play(player)
 
 
 class BookOfShadow(Relic):
@@ -308,7 +312,6 @@ class BookOfShadow(Relic):
     text = 'Draw, look at, and rearrange the top 4 cards of the Player deck. Put them back on top'
 
     def play(self, player):
-        super(BookOfShadow, self).play(player)
         top = []
         new_order = []
         for i in range(4):
@@ -318,6 +321,7 @@ class BookOfShadow(Relic):
             top.remove(card)
             new_order.append(card)
         self.game.player_deck += new_order
+        super(BookOfShadow, self).play(player)
 
 
 class LastHourglass(Relic):
@@ -328,11 +332,11 @@ class LastHourglass(Relic):
         return sorted({card for card in self.game.player_discards if not isinstance(card, Relic)})
 
     def play(self, player):
-        super(LastHourglass, self).play(player)
         clue = get_input(self.playable(), None, 'Select a Clue card')
         self.game.player_discards.remove(clue)
         self.game.current_player.hand.append(clue)
         self.game.current_player.limit_hand()
+        super(LastHourglass, self).play(player)
 
 
 class SealOfLeng(Relic):
@@ -344,12 +348,12 @@ class SealOfLeng(Relic):
         return [god for god in self.game.old_gods if god.revealed and god.effect]
 
     def play(self, player):
-        super(SealOfLeng, self).play(player)
         god = get_input(self.playable(), 'name', 'Select an old god with an active effect')
         god.name = 'SEAL OF LENG'
         if god.effect == REDUCED_CULTIST_RESERVE:
             self.game.cultist_reserve += 3
         self.game.effects.remove(god.effect)
+        super(SealOfLeng, self).play(player)
 
 
 class AlhazredsFlame(Relic):
@@ -360,7 +364,6 @@ class AlhazredsFlame(Relic):
         return [loc for loc in self.game.locations.values() if loc.shoggoth or loc.cultists]
 
     def play(self, player):
-        super(AlhazredsFlame, self).play(player)
         if not self.playable():
             return
         shoggo_locations = [loc for loc in self.game.locations.values() if loc.shoggoth]
@@ -393,6 +396,7 @@ class AlhazredsFlame(Relic):
                 remove_shoggoth()
             else:
                 remove_cultists()
+        super(AlhazredsFlame, self).play(player)
 
 
 def get_old_gods(game):
