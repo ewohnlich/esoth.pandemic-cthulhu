@@ -91,7 +91,20 @@ def get_input(options, attr, prompt, force=False):
 
 
 def confirm(pre=''):
-    if pre:
-        input(pre + ' Hit any key to continue')
-    else:
-        input('Hit any key to continue')
+    # if pre:
+    #     input(pre + ' Hit any key to continue')
+    # else:
+    #     input('Hit any key to continue')
+    return
+
+
+def get_num_players(game):
+    if not game.num_players:
+        if game.mode == 'cli':
+            num_players = input('Number of players [2/3/4]: ')
+            while num_players not in map(str, range(1, 5)):
+                num_players = input('Invalid number. Number of players [2/3/4]:')
+            num_players = int(num_players)
+        else:
+            num_players = 2
+        game.num_players = num_players

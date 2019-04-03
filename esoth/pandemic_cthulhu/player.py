@@ -1,6 +1,6 @@
 import random
 
-from .actions import build_actions, PlayRelic
+from .actions import build_actions, PlayRelic, Walk
 from .decks import Relic, EvilStirs
 from .utils import PandemicObject, get_input, SANITY_BASE, ACTIONS_BASE, SKIP_SUMMON, MAGICIAN, DOCTOR
 
@@ -14,11 +14,12 @@ class Player(PandemicObject):
     location = 'Train Station'
     game = None
 
-    # once per turn trackers
+    # once per turn/event trackers
     defeated_cultist_this_space = False
     defeated_shoggoth_this_turn = False
     played_relic_this_turn = False
     insane_hunter_paranoia = False
+    extra_move_available = False
 
     def __init__(self, game):
         super(Player, self).__init__()
@@ -75,7 +76,6 @@ class Player(PandemicObject):
         # TODO sanity state may change mid turn, which effects turn limit
         self.defeated_shoggoth_this_turn = False
         self.played_relic_this_turn = False
-        self.start_size = False
         num_actions = ACTIONS_BASE
         if self.role == DOCTOR:
             num_actions += 1
@@ -87,6 +87,8 @@ class Player(PandemicObject):
             action = get_input(available, 'name', 'You have {} action(s) remaining.'.format(num_actions),
                                force=True)
             cost = action.run()
+            if not isinstance(action, Walk):
+                self.extra_move_available = False
             num_actions -= cost or 0
             if self.location != last_location:
                 self.defeated_cultist_this_space = False  # reset Ithaqua effect

@@ -1,9 +1,8 @@
+from .base import PandemicCthulhuTestCase
+from ..actions import PlayRelic, SealGate
 from ..decks import AlienCarving, BizarreStatue, MiGoEye, XaosMirror, SilverKey, SongOfKadath, \
     ElderSign, LastHourglass, WardedBox, get_relics, Nyarlothep, BookOfShadow, SealOfLeng, AlhazredsFlame
-from ..actions import PlayRelic, SealGate
-from ..utils import SKIP_SUMMON, SKIP_SANITY_CHECKS, MAGICIAN
-
-from .base import PandemicCthulhuTestCase
+from ..utils import SKIP_SUMMON, SKIP_SANITY_CHECKS, DISALLOW_GATE
 
 
 class RelicCase(PandemicCthulhuTestCase):
@@ -14,12 +13,15 @@ class RelicCase(PandemicCthulhuTestCase):
 
         for relic in get_relics(self.game):
             self.clear_board()
+            self.game.effects = []
             self.game.player_discards = ['Arkham', 'Innsmouth'] * 6
             self.game.players[0].hand = ['Arkham', 'Dunwich']
             self.game.players[1].hand = ['Innsmouth', 'Kingsport']
+            if relic.name == 'Seal of Leng':
+                self.game.effects.append(DISALLOW_GATE)
             if 'No sanity roll required' not in relic.text:
                 relic.play(self.player)
-                self.assertIn('**', self.game.stream.getvalue())
+                self.assertIn('** Dummy', self.game.stream.getvalue())
                 self.game.stream.truncate(0)
                 self.game.stream.seek(0)
 
@@ -36,7 +38,7 @@ class RelicCase(PandemicCthulhuTestCase):
         relic = BizarreStatue(self.game)
         relic.play(self.player)
         discards = len(self.game.summon_discards)
-        self.game.player_deck = ['Arkham'] * 4  # no evil stirs please!
+        self.game.player_deck = ['Arkham'] * 60  # no evil stirs please!
         self.player.do_turn()
         self.assertEqual(len(self.game.summon_discards) - discards, 0)
         self.game.reset_states()  # this action is handled by the game, not the player

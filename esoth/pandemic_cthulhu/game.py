@@ -6,10 +6,11 @@ from .decks import get_old_gods, get_player_relic_decks, get_summon_deck, EvilSt
 from .player import Player
 from .printer import print_elder_map
 from .utils import PandemicObject, get_input, SKIP_SUMMON, SKIP_SANITY_CHECKS, SEAL_GATE_BASE_COST, \
-    REDUCE_SEAL_COST, INCREASE_SEAL_COST, DETECTIVE, MAGICIAN, confirm
+    REDUCE_SEAL_COST, DETECTIVE, MAGICIAN, confirm, get_num_players
 
 
 class GameBoard(object):
+    mode = 'cli'
     id = 0
     cultist_reserve = 20
     shoggoth_reserve = 3
@@ -44,16 +45,10 @@ class GameBoard(object):
         self.old_gods = get_old_gods(self)
         self.num_players = num_players
         self.auto = auto
+        self.rm = RoleManager()
 
         if stream:
             self.stream = stream
-
-        if not num_players:
-            num_players = input('Number of players [2/3/4]: ')
-            while num_players not in map(str, range(1, 5)):
-                num_players = input('Invalid number. Number of players [2/3/4]:')
-            num_players = int(num_players)
-        self.num_players = num_players
 
     def announce(self, msg):
         """ The game is only text based now so it just prints to stdout
@@ -180,12 +175,15 @@ class GameBoard(object):
             self.player_deck += deck
 
     def _setup(self):
-        rm = RoleManager()
-        while self.num_players:
-            player = Player(self)
-            rm.assign_role(player, self.auto)
-            self.players.append(player)
-            self.num_players -= 1
+        if not self.num_players:
+            get_num_players(self)
+
+        if not self.players:
+            while self.num_players:
+                player = Player(self)
+                self.rm.assign_role(player, self.auto)
+                self.players.append(player)
+                self.num_players -= 1
         self.current_player = self.players[0]
         self.player_deck, self.relic_deck = get_player_relic_decks(self, self.num_players)
         self.summon_deck = get_summon_deck()
@@ -283,7 +281,8 @@ class GameBoard(object):
         return 2
 
     def play(self):
-        self._setup()
+        if not self.players:
+            self._setup()
 
         self.show_board()
         turn = 0

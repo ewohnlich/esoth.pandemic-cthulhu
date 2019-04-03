@@ -364,8 +364,6 @@ class AlhazredsFlame(Relic):
         return [loc for loc in self.game.locations.values() if loc.shoggoth or loc.cultists]
 
     def play(self, player):
-        if not self.playable():
-            return
         shoggo_locations = [loc for loc in self.game.locations.values() if loc.shoggoth]
         cultist_locations = [loc for loc in self.game.locations.values() if loc.cultists]
 
@@ -389,7 +387,7 @@ class AlhazredsFlame(Relic):
             remove_shoggoth()
         elif cultist_locations and not shoggo_locations:
             remove_cultists()
-        else:
+        elif shoggo_locations and cultist_locations:
             opts = ['Remove shoggoth', 'Remove 4 cultists']
             opt = get_input(opts, None, 'Choose an option')
             if opts.index(opt) == 0:
@@ -514,23 +512,22 @@ class RoleManager(object):
             REPORTER,
         ]
         self.shuffle()
-        self.active_role = self.roles.pop()
+        self.active_roles = [self.roles.pop(), self.roles.pop()]
 
     def shuffle(self):
         roles = self.roles
         shuffle(roles)
         self.roles = roles
 
-    def assign_role(self, player, auto=False):
+    def assign_role(self, player, auto=False, role=None):
         if auto:
+            self.roles += self.active_roles
             self.shuffle()
             player.role = self.roles.pop()
             return
 
-        choice = None
-        choices = [self.active_role, self.roles.pop()]
-        while not choice:
-            choice = get_input(choices, 'name', 'Select a role')
-            del choices[choices.index(choice)]
-            self.active_role = choices[0]
-        player.role = choice
+        if not role:
+            role = get_input(self.active_roles, 'name', 'Select a role')
+        self.active_roles.remove(role)
+        self.active_roles.append(self.roles.pop())
+        player.role = role

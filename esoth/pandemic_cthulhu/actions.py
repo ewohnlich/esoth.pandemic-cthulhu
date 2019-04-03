@@ -82,17 +82,35 @@ class Walk(Action):
             self.player.insane_hunter_roll()
             self.player.insane_hunter_paranoia = True
 
-        if not double:
-            # no extra move if movement restriction in effect
-            if self.player.role == DRIVER and not (self.game.locations[self.player.location].cultists >= 2 and
-                                                   MOVEMENT_RESTRICTION in self.game.effects):
-                second_move = True
-                if self.player.sanity:
-                    second_move = get_input(['Yes', 'No'], None, 'Do you want to move again for free?')
-                if second_move == 'Yes':
-                    self.run(double=True)
+        if self.player.role == DRIVER:
+            self.player.extra_move_available = True
 
         return 1
+
+
+class FreeWalk(Action):
+    name = 'Free move (Driver)'
+
+    def available(self, remaining_actions=None):
+        movement_restriction = (self.game.locations[
+                                    self.player.location].cultists >= 2 and MOVEMENT_RESTRICTION in self.game.effects)
+        return self.player.extra_move_available and not movement_restriction and self.player.sanity
+
+    def options(self):
+        return self.game.locations[self.player.location].connections
+
+    def run(self, instruction=None):
+        new_loc = instruction
+        if not new_loc:
+            conns = self.options()
+            if len(conns) == 1:
+                new_loc = conns[0]
+            if not new_loc:
+                new_loc = get_input(conns, 'name', 'Where would you like to move?')
+        self.game.move_player(new_loc.name)
+        self.player.extra_move_available = False
+        return 0
+
 
 
 class Bus(Action):
@@ -467,6 +485,7 @@ class PrintRules(Action):
 def build_actions(game, player):
     # can't use inspect because it does not keep order
     return [
+        FreeWalk(game, player),
         Walk(game, player),
         Bus(game, player),
         UseGate(game, player),
