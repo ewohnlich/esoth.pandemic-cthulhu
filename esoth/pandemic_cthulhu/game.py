@@ -26,6 +26,7 @@ class GameBoard(object):
     locations = None
     towns = None
     current_player = None
+    current_actions = 4  # will want to use this instead of while loop, eventually
     stream = sys.stdout
     lose_condition = False
     win_condition = True
@@ -279,6 +280,9 @@ class GameBoard(object):
         if len([god for god in self.old_gods if god.revealed]) > 3:
             return 3
         return 2
+
+    def execute_action(self, action, instruction=None):
+        self.current_player.execute_action(action, instruction)
 
     def play(self):
         if not self.players:

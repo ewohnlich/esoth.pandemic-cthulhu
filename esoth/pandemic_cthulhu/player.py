@@ -13,6 +13,7 @@ class Player(PandemicObject):
     number = 0
     location = 'Train Station'
     game = None
+    num_actions = 0
 
     # once per turn/event trackers
     defeated_cultist_this_space = False
@@ -74,22 +75,16 @@ class Player(PandemicObject):
 
     def do_turn(self):
         # TODO sanity state may change mid turn, which effects turn limit
-        self.defeated_shoggoth_this_turn = False
-        self.played_relic_this_turn = False
-        num_actions = ACTIONS_BASE
-        if self.role == DOCTOR:
-            num_actions += 1
-        if not self.sanity:
-            num_actions -= 1
+        self.start_turn()
         last_location = self.location
-        while num_actions > 0:
-            available = [action for action in build_actions(self.game, self) if action.available(num_actions)]
-            action = get_input(available, 'name', 'You have {} action(s) remaining.'.format(num_actions),
+        while self.num_actions > 0:
+            available = [action for action in build_actions(self.game, self) if action.available(self.num_actions)]
+            action = get_input(available, 'name', 'You have {} action(s) remaining.'.format(self.num_actions),
                                force=True)
             cost = action.run()
             if not isinstance(action, Walk):
                 self.extra_move_available = False
-            num_actions -= cost or 0
+            self.num_actions -= cost or 0
             if self.location != last_location:
                 self.defeated_cultist_this_space = False  # reset Ithaqua effect
             last_location = self.location
@@ -114,3 +109,19 @@ class Player(PandemicObject):
         """ special roll for insane hunter, the first time each turn they enter a location with no cultists """
         if random.choice((0, 1)):
             self.game.add_cultist(self.location)
+
+    def start_turn(self):
+        self.defeated_shoggoth_this_turn = False
+        self.played_relic_this_turn = False
+        self.num_actions = ACTIONS_BASE
+        if self.role == DOCTOR:
+            self.num_actions += 1
+        if not self.sanity:
+            self.num_actions -= 1
+
+    def execute_action(self, command, instruction=None):
+        actions = [action for action in build_actions(self.game, self) if action.available(self.num_actions) and action.name == command]
+        if actions:
+            action = actions[0]
+            action.run(instruction)
+
